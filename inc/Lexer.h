@@ -30,6 +30,22 @@ public:
 	virtual const char* getIdf() = 0;
 	virtual int getInt() = 0;
 	virtual char getOp() = 0;
+
+	virtual void _Test_Show()
+	{
+		if(my_type == Identifier)
+		{
+			std::cout << "identifier " << getIdf()<<std::endl;
+		}
+		else if(my_type == Integer)
+		{
+			std::cout << "integer " << getInt()<<std::endl;
+		}
+		else
+		{
+			std::cout << getOp()<<std::endl;
+		}
+	}
 };
 
 class Idf : public Token123
@@ -130,14 +146,20 @@ class Lexer
 {
 private:
 	std::vector<Token123*> Tokens;
-	int cur_Tk_idx;
-
+	int reading_to;
 public:
 	Lexer();
 
-	void getToken();
+	Token123* getToken();
 	void reset_reading();
-
+	void _Test_Lexer_Check()
+	{
+		for(Token123* p: Tokens)
+		{
+			p->_Test_Show();
+		}
+		std::cout << "endofinput";
+	}
 	~Lexer();
 };
 

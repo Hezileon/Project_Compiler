@@ -5,17 +5,14 @@ using namespace std;
 
 int main()
 {
-	Idf test_idf("123");
-	test_idf.check();
+	Lexer obj;
+	//obj._Test_Lexer_Check();
 
-	Op test_op('+');
-	test_op.check();
-	cout << endl << test_op.getOp();
-
-	Int test_int(123);
-	test_int.check();
-	cout << endl <<test_int.getInt();
-
+	for(Token123* p = obj.getToken(); p != nullptr ; p = obj.getToken())
+	{
+		p->_Test_Show();
+	}
+	cout << "endofinput";
 
 	return 0;
 }
