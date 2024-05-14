@@ -11,7 +11,7 @@ Lexer::Lexer()
 	int ch = 0;
 	char temp_ch[50];
 	int counter = 0;
-	while((ch=getchar())!=26)
+	while((ch=getchar())!=26 && ch != EOF)
 	{
 		if(if_is_new_object)
 		{
@@ -25,7 +25,7 @@ Lexer::Lexer()
 				// put first integer to temp_ch;
 				temp_ch[counter++] = ch;
 			}
-			else if(ch == 42 || ch == 43 || ch == 45 || ch == 47){
+			else if(ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '='){
 				if_is_new_object = false;
 				currentType = Operator;
 				// new a Op into the vector array and reset if_is & currentType;
@@ -64,7 +64,7 @@ Lexer::Lexer()
 					// new a idf and reset if_is to correct status(do not set to false so that no ch is being left) and current type and 
 
 				}
-				else if(ch == 42 || ch == 43 || ch == 45 || ch == 47)
+				else if(ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '=')
 				{
 					temp_ch[counter] = '\0';
 
@@ -103,7 +103,7 @@ Lexer::Lexer()
 					if_is_new_object = true;
 					counter = 0;
 				}
-				else if (ch == 42 || ch == 43 || ch == 45 || ch == 47)
+				else if (ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '=')
 				{
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
