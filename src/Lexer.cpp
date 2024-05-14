@@ -11,7 +11,7 @@ Lexer::Lexer()
 	int ch = 0;
 	char temp_ch[50];
 	int counter = 0;
-	while((ch=getchar())!=EOF)
+	while((ch=getchar())!=26)
 	{
 		if(if_is_new_object)
 		{
@@ -138,7 +138,7 @@ Lexer::Lexer()
 	}
 
 
-	if(if_is_new_object = false)
+	if(if_is_new_object == false)
 	{
 		if (currentType == Identifier)
 		{
