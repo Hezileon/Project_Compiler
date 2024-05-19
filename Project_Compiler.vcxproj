@@ -128,10 +128,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="inc\Lexer.h" />
+    <ClInclude Include="inc\virtual_computer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\virtual_computer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -18,12 +18,18 @@
     <ClInclude Include="inc\Lexer.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="inc\virtual_computer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\Lexer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\virtual_computer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
