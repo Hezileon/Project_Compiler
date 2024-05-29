@@ -21,7 +21,7 @@
     <ClInclude Include="inc\virtual_computer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="inc\Lexer2.h">
+    <ClInclude Include="inc\Expression.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

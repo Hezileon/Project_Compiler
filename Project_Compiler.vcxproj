@@ -128,7 +128,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="inc\Lexer.h" />
-    <ClInclude Include="inc\Lexer2.h" />
+    <ClInclude Include="inc\Expression.h" />
     <ClInclude Include="inc\virtual_computer.h" />
   </ItemGroup>
   <ItemGroup>

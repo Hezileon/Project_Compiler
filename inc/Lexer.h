@@ -29,27 +29,27 @@ public:
 	const Type & getType() const { return my_type; }
 
 	// These methods, having access to the private member of the class, are unsafe to use; 
-	virtual const char* getIdf_privateValue() = 0;
-	virtual int getInt_privateValue() = 0;
-	virtual char getOp_privateValue() = 0;
+	virtual const char* getIdf() = 0;
+	virtual int getInt() = 0;
+	virtual char getOp() = 0;
 
 	// covariant + copy function... This may seems to be a good idea?
-	virtual Token123& getPtr() = 0;
+	//virtual Token123& getPtr() = 0;
 
 
 	virtual void _Test_Show()
 	{
 		if(my_type == Identifier)
 		{
-			std::cout << "identifier " << getIdf_privateValue()<<std::endl;
+			std::cout << "identifier " << getIdf()<<std::endl;
 		}
 		else if(my_type == Integer)
 		{
-			std::cout << "integer " << getInt_privateValue()<<std::endl;
+			std::cout << "integer " << getInt()<<std::endl;
 		}
 		else
 		{
-			std::cout << getOp_privateValue()<<std::endl;
+			std::cout << getOp()<<std::endl;
 		}
 	}
 };
@@ -66,8 +66,7 @@ public:
 		str = new char[len + 1];
 		strcpy(str, ch);
 	}
-	virtual Idf& getPtr() override { return *this; }
-	Idf getIdf() { return Idf{ this->str, this->len }; }
+	//virtual Idf& getPtr() override { return *this; }
 
 
 	// add copy member function
@@ -81,16 +80,16 @@ public:
 		std::cout << "My Value is:" << str << std::endl;
 	}
 
-	virtual const char* getIdf_privateValue() override
+	virtual const char* getIdf() override
 	{
 		return str;
 	}
 
-	int getInt_privateValue() override
+	int getInt() override
 	{
 		return 0;
 	}
-	char getOp_privateValue() override
+	char getOp() override
 	{
 		return '\0';
 	}
@@ -110,8 +109,8 @@ public:
 	{
 		I = _x;
 	}
-	virtual Int& getPtr() override { return *this; }
-	Int getInt() { return Int{I}; }
+	//virtual Int& getPtr() override { return *this; }
+	//Int getInt() { return Int{I}; }
 
 	Int(const Int&);
 	Int& operator=(const Int&);
@@ -122,16 +121,16 @@ public:
 		std::cout << "My Value is:" << I << std::endl;
 	}
 
-	virtual int getInt_privateValue() override
+	virtual int getInt() override
 	{
 		return I;
 	}
 
 
-	const char* getIdf_privateValue() override{
+	const char* getIdf() override{
 		return nullptr;
 	}
-	char getOp_privateValue() override{
+	char getOp() override{
 		return '\0';
 	}
 };
@@ -145,8 +144,8 @@ public:
 	{
 		OP = _op;
 	}
-	virtual Op& getPtr() override { return *this; }
-	Op getOp() { return Op{ OP }; }
+	//virtual Op& getPtr() override { return *this; }
+	//Op getOp() { return Op{ OP }; }
 
 	Op(const Op&);
 	Op& operator=(const Op&);
@@ -158,15 +157,21 @@ public:
 		std::cout << "My Value is:" << OP << std::endl;
 	}
 
-	virtual char getOp_privateValue() override
+	virtual char getOp() override
 	{
 		return OP;
 	}
 
-
-	const char* getIdf_privateValue() override{ return nullptr;}
-	int getInt_privateValue() override{ return 0;}
+	const char* getIdf() override{ return nullptr;}
+	int getInt() override{ return 0;}
 };
+
+class KeyWord: public Token123
+{
+	std::string KW;
+
+};
+
 
 // storing tokens as a whole, use getToken() to get next token in the lexer;
 class Lexer
@@ -191,6 +196,9 @@ public:
 	
 	~Lexer();
 };
+
+
+
 
 
 #endif

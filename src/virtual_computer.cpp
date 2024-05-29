@@ -6,7 +6,7 @@
 static int MEM[500] = {};
 
 
-static std::map<int, Command*> cid_map; // POSSIBLE IMPROVEMENTseems that can be made global, and save the resource of copying;
+static std::map<int, Command*> cid_map; // POSSIBLE IMPROVEMENT seems that can be made global, and save the resource of copying;
 // (operated with cid_map) to get the cid's corresponding Complex_Command's ptr;
 Command* get_C_Command(int id)
 {
