@@ -190,14 +190,64 @@ Lexer::~Lexer()
 	}
 }
 
+Idf::Idf(const Idf& identifier)
+{
+	str = new char[identifier.len + 1];
+	len = identifier.len;
+	strcpy(str, identifier.str);
+}
+
+Idf& Idf::operator=(const Idf& identifier)
+{
+	if(this != &identifier)
+	{
+		delete[] str;
+
+		str = new char[identifier.len + 1];
+		len = identifier.len;
+		strcpy(str, identifier.str);
+		
+	}
+	return *this;
+}
+bool Idf::operator==(const char* ch) const
+{
+	int result = strcmp(str, ch);
+	return (result == 0);
+}
+
+Int::Int(const Int& integer)
+{
+	this->I = integer.I;
+}
+Int& Int::operator=(const Int& integer)
+{
+	if(this->I != integer.I)
+	{
+		this->I = integer.I;
+	}
+	return *this;
+}
+Op::Op(const Op& operator_)
+{
+	OP = operator_.OP;
+}
+Op& Op::operator=(const Op& operator_)
+{
+	if(operator_.OP != OP)
+	{
+		OP = operator_.OP;
+	}
+	return *this;
+}
+
+
+
+
+
+
+
 /*Lexer's test and running
  *
- *	Lexer obj;
-	//obj._Test_Lexer_Check();
-
-	for(Token123* p = obj.getToken(); p != nullptr ; p = obj.getToken())
-	{
-		p->_Test_Show();
-	}
-	cout << "endofinput";
+ *	
 */

@@ -7,6 +7,13 @@ using namespace std;
 
 int main()
 {
-	Virtual_Computer_Main();
+	Lexer obj;// the constructor of Lexer will do the job of input;
+
+	for (Token123* p = obj.getToken(); p != nullptr; p = obj.getToken())
+	{
+		
+	}
+
+	cout << "endofinput";
 	return 0;
 }
