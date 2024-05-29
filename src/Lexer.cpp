@@ -25,9 +25,17 @@ Lexer::Lexer()
 				// put first integer to temp_ch;
 				temp_ch[counter++] = ch;
 			}
-			else if(ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '='){
+			else if(isKeyWord(ch)){
 				if_is_new_object = false;
 				currentType = Operator;
+
+				memset(temp_ch, '\0', sizeof(temp_ch));
+				counter = 0;
+
+				// put first integer to temp_ch;
+				temp_ch[counter++] = ch;
+
+				/*
 				// new a Op into the vector array and reset if_is & currentType;
 
 				Token123* ptr;
@@ -35,6 +43,7 @@ Lexer::Lexer()
 				Tokens.push_back(ptr);
 
 				if_is_new_object = true;
+				*/
 			}
 			else if(isalpha(ch))
 			{
@@ -50,7 +59,7 @@ Lexer::Lexer()
 		{
 			if(currentType == Identifier)
 			{
-				if(ch == 9 || ch == 10 || ch == 32)
+				if(isBlank(ch))//遇到空格-> stop
 				{
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
@@ -62,25 +71,23 @@ Lexer::Lexer()
 					counter = 0;
 
 					// new a idf and reset if_is to correct status(do not set to false so that no ch is being left) and current type and 
-
 				}
-				else if(ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '=')
+				else if(isKeyWord(ch))//遇到keyWord ->stop 并切换至下一个type!!!
 				{
 					temp_ch[counter] = '\0';
-
 					Token123* ptr = new Idf(temp_ch);
 					Tokens.push_back(ptr);
 
-					if_is_new_object = false;
-					currentType = Operator;
+					if_is_new_object = true;
 					// new a Op into the vector array and reset if_is & currentType;
 
-					Token123* ptr1;
-					ptr1 = new Op(ch);
-					Tokens.push_back(ptr1);
+					if_is_new_object = false;
+					currentType = Operator;
 
-					if_is_new_object = true;
+					memset(temp_ch, '\0', sizeof(temp_ch));
 					counter = 0;
+					temp_ch[counter++] = ch;
+					// put first integer to temp_ch;
 				}
 				else
 				{
@@ -89,7 +96,7 @@ Lexer::Lexer()
 			}
 			else if(currentType == Integer)
 			{
-				if (ch == 9 || ch == 10 || ch == 32)
+				if (isBlank(ch))//遇到空格 ->stop
 				{
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
@@ -103,7 +110,7 @@ Lexer::Lexer()
 					if_is_new_object = true;
 					counter = 0;
 				}
-				else if (ch == 42 || ch == 43 || ch == 45 || ch == 47 || ch == '=')
+				else if (isKeyWord(ch))//遇到keyWord -> stop 并切换至下一个type!!!
 				{
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
@@ -112,17 +119,16 @@ Lexer::Lexer()
 					ptr = new Int(std::stoi(temp_ch));
 					Tokens.push_back(ptr);
 
+					if_is_new_object = true;
 					// new a idf and reset if_is to correct status(do not set to false so that no ch is being left) and current type and 
 
 					if_is_new_object = false;
 					currentType = Operator;
-					// new a Op into the vector array and reset if_is & currentType;
 
-					Token123* ptr1;
-					ptr1 = new Op(ch);
-					Tokens.push_back(ptr1);
-					if_is_new_object = true;
+					memset(temp_ch, '\0', sizeof(temp_ch));
 					counter = 0;
+					temp_ch[counter++] = ch;
+					// put first integer to temp_ch;
 
 				}
 				else if(isalpha(ch))
@@ -130,6 +136,59 @@ Lexer::Lexer()
 					std::cerr << "something is wrong";
 				}
 				else
+				{
+					temp_ch[counter++] = ch;
+				}
+			}
+			else if(currentType = Operator)
+			{
+				if (isBlank(ch))//遇到空格 ->stop
+				{
+					// remember to put '\0' to temp_ch[counter];
+					temp_ch[counter] = '\0';
+
+					Token123* ptr;
+					ptr = new Op(temp_ch);
+					Tokens.push_back(ptr);
+
+					if_is_new_object = true;
+					counter = 0;
+				}
+				else if (isalpha(ch))//遇到字母 ->stop 并切换至下一个type
+				{
+					temp_ch[counter] = '\0';
+
+					Token123* ptr;
+					ptr = new Op(temp_ch);
+					Tokens.push_back(ptr);
+
+					if_is_new_object = true;
+					// next type begin:
+					if_is_new_object = false;
+					currentType = Identifier;
+
+					memset(temp_ch, '\0', sizeof(temp_ch));
+					counter = 0;
+					temp_ch[counter++] = ch;
+
+				}
+				else if (isdigit(ch))//遇到数字 ->stop 并切换至下一个type
+				{
+					temp_ch[counter] = '\0';
+					Token123* ptr;
+					ptr = new Op(temp_ch);
+					Tokens.push_back(ptr);
+
+					if_is_new_object = true;
+					// next type begin:
+					if_is_new_object = false;
+					currentType = Integer;
+
+					memset(temp_ch, '\0', sizeof(temp_ch));
+					counter = 0;
+					temp_ch[counter++] = ch;
+				}
+				else if (isKeyWord(ch))//继续读取...
 				{
 					temp_ch[counter++] = ch;
 				}
@@ -164,8 +223,18 @@ Lexer::Lexer()
 				if_is_new_object = true;
 				counter = 0;
 		}
+		else if(currentType == Operator)
+		{
+			temp_ch[counter] = '\0';
+
+			Token123* ptr;
+			ptr = new Op(temp_ch);
+			Tokens.push_back(ptr);
+
+			if_is_new_object = true;
+			counter = 0;
+		}
 	}
-	
 }
 
 Token123* Lexer::getToken()
@@ -192,9 +261,15 @@ Lexer::~Lexer()
 
 Idf::Idf(const Idf& identifier)
 {
-	str = new char[identifier.len + 1];
-	len = identifier.len;
-	strcpy(str, identifier.str);
+	if (this != &identifier)
+	{
+		delete[] str;
+
+		str = new char[identifier.len + 1];
+		len = identifier.len;
+		strcpy(str, identifier.str);
+
+	}
 }
 
 Idf& Idf::operator=(const Idf& identifier)
@@ -206,7 +281,6 @@ Idf& Idf::operator=(const Idf& identifier)
 		str = new char[identifier.len + 1];
 		len = identifier.len;
 		strcpy(str, identifier.str);
-		
 	}
 	return *this;
 }
@@ -230,13 +304,22 @@ Int& Int::operator=(const Int& integer)
 }
 Op::Op(const Op& operator_)
 {
-	OP = operator_.OP;
+	if(&operator_ != this)
+	{
+		delete[] OP;
+
+		OP = new char(strlen(operator_.OP) + 1);
+		strcpy(OP, operator_.OP);
+	}
 }
 Op& Op::operator=(const Op& operator_)
 {
 	if(operator_.OP != OP)
 	{
-		OP = operator_.OP;
+		delete[] OP;
+
+		OP = new char(strlen(operator_.OP) + 1);
+		strcpy(OP, operator_.OP);
 	}
 	return *this;
 }

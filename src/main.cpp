@@ -14,11 +14,6 @@ int main()
 	for (Token123* p = obj.getToken(); p != nullptr; p = obj.getToken())
 	{
 		p->_Test_Show();
-		{
-			Token123* p2 = p;
-			p2->getOp();
-		}
-		p->_Test_Show();
 	}
 
 	cout << "endofinput";

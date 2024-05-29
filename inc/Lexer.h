@@ -7,6 +7,15 @@
 #include <cstring>
 #include <vector>
 
+inline bool isBlank(int ch)
+{
+	return ch == 9 || ch == 10 || ch == 32;
+}
+inline bool isKeyWord(int ch)
+{
+	return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '=' || ch == '(' || ch == ')' || ch == '>' || ch == '<' || ch == '?'
+		|| ch == ':' || ch == ';' || ch == '&' || ch == '|' || ch == '!' ;
+}
 enum Type
 {
 	Identifier = 0,
@@ -31,7 +40,7 @@ public:
 	// These methods, having access to the private member of the class, are unsafe to use; 
 	virtual const char* getIdf() = 0;
 	virtual int getInt() = 0;
-	virtual char getOp() = 0;
+	virtual char* getOp() = 0;
 
 	// covariant + copy function... This may seems to be a good idea?
 	//virtual Token123& getPtr() = 0;
@@ -89,9 +98,10 @@ public:
 	{
 		return 0;
 	}
-	char getOp() override
+
+	char* getOp() override
 	{
-		return '\0';
+		return nullptr;
 	}
 
 	~Idf()
@@ -130,22 +140,29 @@ public:
 	const char* getIdf() override{
 		return nullptr;
 	}
-	char getOp() override{
-		return '\0';
+
+	char* getOp() override{
+		return nullptr;
 	}
 };
 
 class Op : public Token123
 {
 private:
-	char OP;
+	// First things to do:
+	char* OP;
 public:
 	Op(const char _op,int _type = 2) :Token123(_type)
 	{
-		OP = _op;
+		OP = new char[2];
+		OP[0] = _op;
+		OP[1] = '\0';
 	}
-	//virtual Op& getPtr() override { return *this; }
-	//Op getOp() { return Op{ OP }; }
+	Op(const char* ch_ptr, int _type = 2) :Token123(_type)
+	{
+		OP = new char[strlen(ch_ptr) + 1];
+		strcpy(OP, ch_ptr);
+	}
 
 	Op(const Op&);
 	Op& operator=(const Op&);
@@ -157,7 +174,7 @@ public:
 		std::cout << "My Value is:" << OP << std::endl;
 	}
 
-	virtual char getOp() override
+	virtual char* getOp() override
 	{
 		return OP;
 	}
@@ -168,7 +185,8 @@ public:
 
 class KeyWord: public Token123
 {
-	std::string KW;
+	char* KW;
+
 
 };
 
