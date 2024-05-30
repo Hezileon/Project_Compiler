@@ -2,6 +2,30 @@
 
 #include <string>
 #include <cctype>
+
+void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token123*>& Tokens)
+{
+	char last_ch = temp_ch[counter - 1];
+	bool ifIsSpecialCase = (last_ch == '=' && ch == '=') ||
+		(last_ch == '>' && ch == '=') || 
+		(last_ch == '<' && ch == '=') || 
+		(last_ch == '!' && ch == '=') ||
+		(last_ch == '-' && ch == '=') ||
+		(last_ch == '*' && ch == '=') ||
+		(last_ch == '/' && ch == '=') ||
+		(last_ch == '+' && ch == '=') ;
+	if(ifIsSpecialCase)
+	{
+		temp_ch[counter++] = ch;
+		temp_ch[counter] = '\0';
+		Token123* ptr;
+		ptr = new Op(temp_ch);
+		Tokens.push_back(ptr);
+
+		if_is_new_object = true;
+	}
+}
+
 Lexer::Lexer()
 {
 	reading_to = 0;
@@ -190,7 +214,14 @@ Lexer::Lexer()
 				}
 				else if (isKeyWord(ch))//¼ÌÐø¶ÁÈ¡...
 				{
-					temp_ch[counter++] = ch;
+					KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
+
+					temp_ch[counter] = '\0';
+					Token123* ptr;
+					ptr = new Op(temp_ch);
+					Tokens.push_back(ptr);
+
+					if_is_new_object = true;
 				}
 			}
 		}
@@ -225,14 +256,14 @@ Lexer::Lexer()
 		}
 		else if(currentType == Operator)
 		{
-			temp_ch[counter] = '\0';
+			KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
 
+			temp_ch[counter] = '\0';
 			Token123* ptr;
 			ptr = new Op(temp_ch);
 			Tokens.push_back(ptr);
 
 			if_is_new_object = true;
-			counter = 0;
 		}
 	}
 }
