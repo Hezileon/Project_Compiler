@@ -1,6 +1,16 @@
 #include "../inc/Expression.h"
 
 #include <map>
+#include <cstring>
+/*
+ * supporting types:
+ * expression_cmp: 123 ? 2 : 1; 123 >= 122 ? 2 : 1
+ *
+ *
+ *
+ *
+ * unsupporting types: 12+-12;
+ */
 
 std::map<char*, int> IdfToValue;
 int findIdfValue(char* str)
@@ -21,9 +31,9 @@ expressionBasic::expressionBasic(Lexer* lexer)
 	Token* tk = lexer->getToken();
 	Type firstTokenType = tk->getType();
 
-	if (firstTokenType == Operator )
+	if(firstTokenType == Operator)
 	{
-		if(tk->getOp() == "(")
+		if (strcmp(tk->getOp(), "(") == 0)
 		{
 			basicType = basicType_exp;
 		}
@@ -32,7 +42,7 @@ expressionBasic::expressionBasic(Lexer* lexer)
 	{
 		basicType = basicType_idf;
 	}
-	else if(firstTokenType == Integer)
+	else if (firstTokenType == Integer)
 	{
 		basicType = basicType_int;
 	}
@@ -41,15 +51,15 @@ expressionBasic::expressionBasic(Lexer* lexer)
 		std::cerr << "Expected Operator = but receive" << tk->getOp();
 	}
 
-	if(basicType == basicType_idf)
+	if (basicType == basicType_idf)
 	{
 		var.Idf = tk->getIdf();
 	}
-	else if(basicType == basicType_int)
+	else if (basicType == basicType_int)
 	{
 		var.Int = tk->getInt();
 	}
-	else if( basicType == basicType_exp)
+	else if (basicType == basicType_exp)
 	{
 		var.exp = parseExpressionInBracket(lexer);
 	}
@@ -78,15 +88,15 @@ expressionBinary::expressionBinary(expression* _exp_1, expression* _exp_2, char*
 }
 int expressionBinary::evaluate()
 {
-	if (op == "+") { return exp_1->evaluate() + exp_2->evaluate(); }
-	else if(op=="-"){ return exp_1->evaluate() - exp_2->evaluate(); }
-	else if(op=="*"){ return exp_1->evaluate() * exp_2->evaluate(); }
-	else if(op=="/"){ return exp_1->evaluate() / exp_2->evaluate(); }
-	else if(op=="=="){ return exp_1->evaluate() == exp_2->evaluate(); }
-	else if(op==">="){ return exp_1->evaluate() >= exp_2->evaluate(); }
-	else if(op=="<="){ return exp_1->evaluate() <= exp_2->evaluate(); }
-	else if(op=="<"){ return exp_1->evaluate() < exp_2->evaluate(); }
-	else if(op==">"){ return exp_1->evaluate() > exp_2->evaluate(); }
+	if (strcmp(op, "+") == 0) { return exp_1->evaluate() + exp_2->evaluate(); }
+	else if (strcmp(op, "-") == 0) { return exp_1->evaluate() - exp_2->evaluate(); }
+	else if (strcmp(op, "*") == 0) { return exp_1->evaluate() * exp_2->evaluate(); }
+	else if (strcmp(op, "/") == 0) { return exp_1->evaluate() / exp_2->evaluate(); }
+	else if (strcmp(op, "==") == 0) { return exp_1->evaluate() == exp_2->evaluate(); }
+	else if (strcmp(op, ">=") == 0) { return exp_1->evaluate() >= exp_2->evaluate(); }
+	else if (strcmp(op, "<=") == 0) { return exp_1->evaluate() <= exp_2->evaluate(); }
+	else if (strcmp(op, "<") == 0) { return exp_1->evaluate() < exp_2->evaluate(); }
+	else if (strcmp(op, ">") == 0) { return exp_1->evaluate() > exp_2->evaluate(); }
 	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"; }
 }
 // constructor
@@ -98,7 +108,7 @@ expressionTernery::expressionTernery(expression* _exp_1, expression* _exp_2, exp
 }
 int expressionTernery::evaluate()
 {
-	if(exp_1->evaluate() == 1)
+	if (exp_1->evaluate() == 1)
 	{
 		return exp_2->evaluate();
 	}
@@ -115,9 +125,9 @@ expressionUnary::expressionUnary(expression* _exp_1, char* _op)
 }
 int expressionUnary::evaluate()
 {
-	if(op == "-")
+	if (strcmp(op, "-") == 0)
 	{
-		return -exp_1->evaluate();
+		return (- 1)* exp_1->evaluate();
 	}
 	else
 	{
@@ -125,13 +135,13 @@ int expressionUnary::evaluate()
 	}
 }
 
-expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketIncluded )
+expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketIncluded)
 {
 	if (!leftBracketIncluded)
 	{
 		Token* tk = lexer->getToken();
-		if (tk->getType() == Operator && tk->getOp() == "("){}
-		else{std::cerr << "expected ( but receive sth else";}
+		if (tk->getType() == Operator && strcmp(tk->getOp(), "(") == 0) {}
+		else { std::cerr << "expected ( but receive sth else"; }
 	}
 
 	int leftBracketCount = 1;
@@ -140,7 +150,7 @@ expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketIncluded )
 	{
 		Token* tk = lexer->getToken();
 		Type tk_type = tk->getType();
-		if (tk_type == Operator && tk->getOp() == ")") { leftBracketCount--; }
+		if (tk_type == Operator && strcmp(tk->getOp(), ")") == 0) { leftBracketCount--; }
 
 		if (tk_type == Identifier)
 		{
@@ -154,19 +164,33 @@ expression* parseExpression(Lexer* lexer)
 {
 	expression* exp1_1 = parseExpression1(lexer);
 	Token* tk_1 = lexer->getToken();
-	
-	if(tk_1->getType() == Operator && (tk_1->getOp() == "==" ||tk_1->getOp() == ">=" || tk_1->getOp() == "<="))
+
+	if (tk_1->getType() == Operator && (strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0))
 	{
 		// exp1
 		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };
 
 		Token* tk_2 = lexer->getToken();
-		if (tk_2->getType() == Operator && (tk_2->getOp() != "?")){std::cerr << "right after expressionCmp expected ? but receive sth else";}
+		if (tk_2->getType() == Operator && (strcmp(tk_2->getOp(), "?") != 0)) { std::cerr << "right after expressionCmp expected ? but receive sth else"; }
 		// exp2
 		expression* exp1_1 = parseExpression1(lexer);
 
 		Token* tk_3 = lexer->getToken();
-		if (tk_3->getType() == Operator && (tk_3->getOp() != ":")){std::cerr << "right after expressionCmp expected : but receive sth else";}
+		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"; }
+		// exp3
+		expression* exp1_2 = parseExpression1(lexer);
+
+		// expression = exp1 ? exp2 : exp3;
+		expression* rtn = new expressionTernery{ exp_cmp, exp1_1, exp1_2 };
+		return rtn;
+	}
+	else if(tk_1->getType() == Operator && ( strcmp(tk_1->getOp(), "?") == 0))
+	{
+		expression* exp_cmp = exp1_1;
+		expression* exp1_1 = parseExpression1(lexer);
+
+		Token* tk_3 = lexer->getToken();
+		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"; }
 		// exp3
 		expression* exp1_2 = parseExpression1(lexer);
 
@@ -187,15 +211,19 @@ expression* parseExpression1(Lexer* lexer)
 {
 	expression* exp1 = parseExpression2(lexer);
 	Token* tk_next = lexer->getToken();
-	while(tk_next->getType() == Operator && (tk_next->getOp() == "+" || tk_next->getOp() == "-"))
+	while (tk_next->getType() == Operator && ((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0)))
 	{
 		expression* exp2 = parseExpression2(lexer);
 		exp1 = new expressionBinary(exp1, exp2, tk_next->getOp());
 
 		tk_next = lexer->getToken();
 	}
-	if(tk_next->getType() == Operator && (tk_next->getOp() == ";"))
+	if (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), ";") == 0 
+		|| strcmp(tk_next->getOp(), ":") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ">=") == 0 
+		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
+		|| strcmp(tk_next->getOp(), ">") == 0))
 	{
+		lexer->rollBack();
 		return exp1;
 	}
 	else
@@ -208,7 +236,7 @@ expression* parseExpression2(Lexer* lexer)
 {
 	expression* exp1 = parseExpression3(lexer);
 	Token* tk_next = lexer->getToken();
-	while (tk_next->getType() == Operator && (tk_next->getOp() == "*" || tk_next->getOp() == "/"))
+	while (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), "*") == 0 || strcmp(tk_next->getOp(), "/") == 0))
 	{
 		expression* exp2 = parseExpression3(lexer);
 		exp1 = new expressionBinary(exp1, exp2, tk_next->getOp());
@@ -217,7 +245,9 @@ expression* parseExpression2(Lexer* lexer)
 	}
 	if (tk_next->getType() == Operator)
 	{
-		if((tk_next->getOp() == "+" || tk_next->getOp() == "-" || tk_next->getOp() == ")"|| tk_next->getOp() == ";") )
+		
+		if (strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0 
+			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0 )
 		{
 			lexer->rollBack();
 		}
@@ -231,13 +261,15 @@ expression* parseExpression2(Lexer* lexer)
 expression* parseExpression3(Lexer* lexer)
 {
 	Token* tk_next = lexer->getToken();
-	if(tk_next->getType()==Operator && tk_next->getOp() == "-")
+
+	
+	if (tk_next->getType() == Operator && strcmp(tk_next->getOp(), "-") == 0)
 	{
 		expression* exp = parseExpression4(lexer);
 		expression* rtn = new expressionUnary{ exp, tk_next->getOp() };
 		return rtn;
 	}
-	else if(tk_next->getType() == Operator && tk_next->getOp() == "(")
+	else if (tk_next->getType() == Operator && strcmp(tk_next->getOp(), "(") == 0)
 	{
 		expression* exp = parseExpressionInBracket(lexer);
 		return exp;
@@ -248,10 +280,8 @@ expression* parseExpression3(Lexer* lexer)
 		return parseExpression4(lexer);
 	}
 }
-
 expression* parseExpression4(Lexer* lexer)
 {
 	expression* exp = new expressionBasic(lexer);
 	return exp;
 }
-

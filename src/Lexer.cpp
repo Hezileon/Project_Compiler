@@ -3,7 +3,7 @@
 #include <string>
 #include <cctype>
 
-void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token*>& Tokens)
+bool KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token*>& Tokens)
 {
 	char last_ch = temp_ch[counter - 1];
 	bool ifIsSpecialCase = (last_ch == '=' && ch == '=') ||
@@ -24,6 +24,7 @@ void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char*
 
 		if_is_new_object = true;
 	}
+	return ifIsSpecialCase;
 }
 
 Lexer::Lexer()
@@ -214,14 +215,26 @@ Lexer::Lexer()
 				}
 				else if (isKeyWord(ch))//¼ÌÐø¶ÁÈ¡...
 				{
-					KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
+					if(KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens))
+					{
+						
+					}
+					else
+					{
+						temp_ch[counter] = '\0';
+						Token* ptr;
+						ptr = new Op(temp_ch);
+						Tokens.push_back(ptr);
 
-					temp_ch[counter] = '\0';
-					Token* ptr;
-					ptr = new Op(temp_ch);
-					Tokens.push_back(ptr);
+						if_is_new_object = true;
+						// next op to go on
+						if_is_new_object = false;
+						currentType = Operator;
 
-					if_is_new_object = true;
+						memset(temp_ch, '\0', sizeof(temp_ch));
+						counter = 0;
+						temp_ch[counter++] = ch;
+					}
 				}
 			}
 		}
@@ -256,8 +269,6 @@ Lexer::Lexer()
 		}
 		else if(currentType == Operator)
 		{
-			KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
-
 			temp_ch[counter] = '\0';
 			Token* ptr;
 			ptr = new Op(temp_ch);
