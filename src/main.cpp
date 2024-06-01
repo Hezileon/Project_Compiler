@@ -10,7 +10,9 @@ int main()
 {
 	Lexer obj;// the constructor of Lexer will do the job of input;
 
+	//obj._Test_Lexer_Check();
 	expression* exp = parseExpression(&obj);
+
 	cout<<exp->evaluate();
 
 	return 0;

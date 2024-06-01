@@ -48,7 +48,7 @@ expressionBasic::expressionBasic(Lexer* lexer)
 	}
 	else
 	{
-		std::cerr << "Expected Operator = but receive" << tk->getOp();
+		std::cerr << "Expected Operator = but receive" << tk->getOp()<<std::endl;
 	}
 
 	if (basicType == basicType_idf)
@@ -97,7 +97,7 @@ int expressionBinary::evaluate()
 	else if (strcmp(op, "<=") == 0) { return exp_1->evaluate() <= exp_2->evaluate(); }
 	else if (strcmp(op, "<") == 0) { return exp_1->evaluate() < exp_2->evaluate(); }
 	else if (strcmp(op, ">") == 0) { return exp_1->evaluate() > exp_2->evaluate(); }
-	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"; }
+	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"<<std::endl; }
 }
 // constructor
 expressionTernery::expressionTernery(expression* _exp_1, expression* _exp_2, expression* _exp_3)
@@ -108,13 +108,14 @@ expressionTernery::expressionTernery(expression* _exp_1, expression* _exp_2, exp
 }
 int expressionTernery::evaluate()
 {
-	if (exp_1->evaluate() == 1)
+	// with integer how is Ternery Operator defined?
+	if (exp_1->evaluate() == 0)
 	{
-		return exp_2->evaluate();
+		return exp_3->evaluate();
 	}
 	else
 	{
-		return exp_3->evaluate();
+		return exp_2->evaluate();
 	}
 }
 // constructor
@@ -131,52 +132,50 @@ int expressionUnary::evaluate()
 	}
 	else
 	{
-		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead";
+		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead"<<std::endl;
 	}
 }
 
-expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketIncluded)
+expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketAlreadyIncluded)
 {
-	if (!leftBracketIncluded)
+	if (!leftBracketAlreadyIncluded)
 	{
 		Token* tk = lexer->getToken();
 		if (tk->getType() == Operator && strcmp(tk->getOp(), "(") == 0) {}
-		else { std::cerr << "expected ( but receive sth else"; }
+		else { std::cerr << "(parseExpressionInBracket error) Expected ( but receive sth else"<<std::endl; }
 	}
 
 	int leftBracketCount = 1;
-	//expression* exp1 = parseExpression1();
+	expression* exp1 = parseExpression(lexer);
 	while (leftBracketCount >= 1)
 	{
 		Token* tk = lexer->getToken();
-		Type tk_type = tk->getType();
-		if (tk_type == Operator && strcmp(tk->getOp(), ")") == 0) { leftBracketCount--; }
-
-		if (tk_type == Identifier)
+		if (tk->getType() == Operator && strcmp(tk->getOp(), ")") == 0) {leftBracketCount--;}
+		else 
 		{
-
+			std::cerr << "(parseExpressionInBracket ERROR) Expected ) but receive: " << tk->getOp()<<" instead" << std::endl;
 		}
 	}
-	return nullptr;
+	
+	return exp1;
 }
 
 expression* parseExpression(Lexer* lexer)
 {
 	expression* exp1_1 = parseExpression1(lexer);
 	Token* tk_1 = lexer->getToken();
-
 	if (tk_1->getType() == Operator && (strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0))
 	{
 		// exp1
 		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };
 
 		Token* tk_2 = lexer->getToken();
-		if (tk_2->getType() == Operator && (strcmp(tk_2->getOp(), "?") != 0)) { std::cerr << "right after expressionCmp expected ? but receive sth else"; }
+		if (tk_2->getType() == Operator && (strcmp(tk_2->getOp(), "?") != 0)) { std::cerr << "right after expressionCmp expected ? but receive sth else"<<std::endl; }
 		// exp2
 		expression* exp1_1 = parseExpression1(lexer);
 
 		Token* tk_3 = lexer->getToken();
-		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"; }
+		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"<<std::endl; }
 		// exp3
 		expression* exp1_2 = parseExpression1(lexer);
 
@@ -190,7 +189,7 @@ expression* parseExpression(Lexer* lexer)
 		expression* exp1_1 = parseExpression1(lexer);
 
 		Token* tk_3 = lexer->getToken();
-		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"; }
+		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else"<<std::endl; }
 		// exp3
 		expression* exp1_2 = parseExpression1(lexer);
 
@@ -200,7 +199,7 @@ expression* parseExpression(Lexer* lexer)
 	}
 	else
 	{
-		// expression = exp1;
+		lexer->rollBack();
 		return exp1_1;
 	}
 
@@ -209,45 +208,91 @@ expression* parseExpression(Lexer* lexer)
 // expression1 are sum of many expression2 
 expression* parseExpression1(Lexer* lexer)
 {
+	// TODO: will this need to be taken care of (1+2)+3;
 	expression* exp1 = parseExpression2(lexer);
 	Token* tk_next = lexer->getToken();
 	while (tk_next->getType() == Operator && ((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0)))
 	{
-		expression* exp2 = parseExpression2(lexer);
+		// after +(-) three possibilities: 1. ...*... expression2 2. (...) expression   ->->-> 3. expression mixed with expression2
+		expression* exp2 = nullptr;
+		Token* tk_check_parathesis = lexer->getToken();
+		if(tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
+		{
+			exp2 = parseExpressionInBracket(lexer);
+			Token* tk_check_multiply = lexer->getToken(); 
+			if(tk_check_multiply->getType() == Operator && ((strcmp(tk_check_multiply->getOp(), "*") == 0 || strcmp(tk_check_multiply->getOp(), "/") == 0)))
+			{
+				exp2 = new expressionBinary(exp2, parseExpression2(lexer), tk_check_multiply->getOp());
+			}
+			else
+			{
+				lexer->rollBack();
+			}
+		}
+		else
+		{
+			lexer->rollBack();
+			exp2 = parseExpression2(lexer);
+		}
 		exp1 = new expressionBinary(exp1, exp2, tk_next->getOp());
 
 		tk_next = lexer->getToken();
 	}
-	if (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), ";") == 0 
+	if (tk_next->getType() == Operator && 
+		(strcmp(tk_next->getOp(), ";") == 0 
 		|| strcmp(tk_next->getOp(), ":") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ">=") == 0 
 		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
-		|| strcmp(tk_next->getOp(), ">") == 0))
-	{
+		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0))
+	{ // TODO : CHECK THE CORRECTNESS OF THE ABOVE LINE
 		lexer->rollBack();
 		return exp1;
 	}
 	else
 	{
-		std::cerr << "(parseExpression1 error)Expected ; or + or - but receive sth else :" << tk_next->getOp();
+		std::cerr << "(parseExpression1 error)Expected ; or + or - but receive sth else :" << tk_next->getOp()<<std::endl;
 	}
 }
-
 expression* parseExpression2(Lexer* lexer)
 {
-	expression* exp1 = parseExpression3(lexer);
-	Token* tk_next = lexer->getToken();
-	while (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), "*") == 0 || strcmp(tk_next->getOp(), "/") == 0))
+	// TODO: WHY this isn't working?
+	expression* exp1 = nullptr;
+	Token* tk_check_parathesis = lexer->getToken();
+	if (tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
 	{
-		expression* exp2 = parseExpression3(lexer);
+		exp1 = parseExpressionInBracket(lexer);
+	}
+	else
+	{
+		lexer->rollBack();
+		exp1 = parseExpression3(lexer);
+	}
+
+	Token* tk_next = lexer->getToken();
+	while (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), "*") == 0 || strcmp(tk_next->getOp(), "/") == 0 ))
+	{
+		//after *(/) there are two possibilities: 1.()    2.identifier and integer so safe;
+		
+		expression* exp2 = nullptr;
+		// case: ...*(...)
+		Token* tk_check_parathesis = lexer->getToken();
+		if (tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
+		{
+			exp2 = parseExpressionInBracket(lexer);
+		}
+		else
+		{
+			lexer->rollBack();
+			exp2 = parseExpression3(lexer);
+		}
 		exp1 = new expressionBinary(exp1, exp2, tk_next->getOp());
 
 		tk_next = lexer->getToken();
 	}
-	if (tk_next->getType() == Operator)
-	{
-		
-		if (strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0 
-			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0 )
+	if (tk_next->getType() == Operator )
+	{// TODO: "(" seems not proper to appear at here;
+		if((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0
+			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0
+			|| strcmp(tk_next->getOp(), "(") == 0 ))
 		{
 			lexer->rollBack();
 		}
@@ -255,7 +300,7 @@ expression* parseExpression2(Lexer* lexer)
 	}
 	else
 	{
-		std::cerr << "(parseExpression2 error) Expected  + or -  or * or / but receive sth else";
+		std::cerr << "(parseExpression2 error) Expected  + or -  or * or / but receive: "<<tk_next->getOp()<<" instead"<< std::endl;
 	}
 }
 expression* parseExpression3(Lexer* lexer)
@@ -282,6 +327,7 @@ expression* parseExpression3(Lexer* lexer)
 }
 expression* parseExpression4(Lexer* lexer)
 {
+
 	expression* exp = new expressionBasic(lexer);
 	return exp;
 }

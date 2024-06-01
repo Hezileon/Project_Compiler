@@ -112,7 +112,7 @@ public:
 };
 
 expression* parseExpression(Lexer* lexer);
-expression* parseExpressionInBracket(Lexer* lexer,bool leftBracketIncluded = false);
+expression* parseExpressionInBracket(Lexer* lexer,bool leftBracketAlreadyIncluded = true);
 expression* parseExpression1(Lexer* lexer);
 expression* parseExpression2(Lexer* lexer);
 expression* parseExpression3(Lexer* lexer);
