@@ -72,6 +72,7 @@ public:
 			Command* p = new Single_Command(ptr->getOp(), info.x, info.y, info.z);
 			CCOMMANDS.push_back(p);
 		}
+		return *this;
 	}
 	virtual const opxyz get_info() override {return opxyz(N, x, cid);}
 	virtual int getOp() override { return  op; }

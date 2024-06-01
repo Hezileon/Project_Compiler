@@ -132,6 +132,7 @@
     <ClInclude Include="inc\virtual_computer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Expression.cpp" />
     <ClCompile Include="src\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\virtual_computer.cpp" />

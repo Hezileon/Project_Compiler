@@ -3,7 +3,7 @@
 #include <string>
 #include <cctype>
 
-void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token123*>& Tokens)
+void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token*>& Tokens)
 {
 	char last_ch = temp_ch[counter - 1];
 	bool ifIsSpecialCase = (last_ch == '=' && ch == '=') ||
@@ -18,7 +18,7 @@ void KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char*
 	{
 		temp_ch[counter++] = ch;
 		temp_ch[counter] = '\0';
-		Token123* ptr;
+		Token* ptr;
 		ptr = new Op(temp_ch);
 		Tokens.push_back(ptr);
 
@@ -88,7 +88,7 @@ Lexer::Lexer()
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
 
-					Token123* ptr = new Idf(temp_ch);
+					Token* ptr = new Idf(temp_ch);
 					Tokens.push_back(ptr);
 
 					if_is_new_object = true;
@@ -99,7 +99,7 @@ Lexer::Lexer()
 				else if(isKeyWord(ch))//遇到keyWord ->stop 并切换至下一个type!!!
 				{
 					temp_ch[counter] = '\0';
-					Token123* ptr = new Idf(temp_ch);
+					Token* ptr = new Idf(temp_ch);
 					Tokens.push_back(ptr);
 
 					if_is_new_object = true;
@@ -125,7 +125,7 @@ Lexer::Lexer()
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
 
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Int(std::stoi(temp_ch));
 					Tokens.push_back(ptr);
 
@@ -139,7 +139,7 @@ Lexer::Lexer()
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
 
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Int(std::stoi(temp_ch));
 					Tokens.push_back(ptr);
 
@@ -171,7 +171,7 @@ Lexer::Lexer()
 					// remember to put '\0' to temp_ch[counter];
 					temp_ch[counter] = '\0';
 
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Op(temp_ch);
 					Tokens.push_back(ptr);
 
@@ -182,7 +182,7 @@ Lexer::Lexer()
 				{
 					temp_ch[counter] = '\0';
 
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Op(temp_ch);
 					Tokens.push_back(ptr);
 
@@ -199,7 +199,7 @@ Lexer::Lexer()
 				else if (isdigit(ch))//遇到数字 ->stop 并切换至下一个type
 				{
 					temp_ch[counter] = '\0';
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Op(temp_ch);
 					Tokens.push_back(ptr);
 
@@ -217,7 +217,7 @@ Lexer::Lexer()
 					KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
 
 					temp_ch[counter] = '\0';
-					Token123* ptr;
+					Token* ptr;
 					ptr = new Op(temp_ch);
 					Tokens.push_back(ptr);
 
@@ -234,7 +234,7 @@ Lexer::Lexer()
 		{
 				temp_ch[counter] = '\0';
 
-				Token123* ptr = new Idf(temp_ch);
+				Token* ptr = new Idf(temp_ch);
 				Tokens.push_back(ptr);
 
 				if_is_new_object = true;
@@ -245,7 +245,7 @@ Lexer::Lexer()
 			
 				temp_ch[counter] = '\0';
 
-				Token123* ptr;
+				Token* ptr;
 				ptr = new Int(std::stoi(temp_ch));
 				Tokens.push_back(ptr);
 
@@ -259,7 +259,7 @@ Lexer::Lexer()
 			KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens);
 
 			temp_ch[counter] = '\0';
-			Token123* ptr;
+			Token* ptr;
 			ptr = new Op(temp_ch);
 			Tokens.push_back(ptr);
 
@@ -268,7 +268,7 @@ Lexer::Lexer()
 	}
 }
 
-Token123* Lexer::getToken()
+Token* Lexer::getToken()
 {
 	if (reading_to == Tokens.size()) { return nullptr; }
 	else
@@ -284,7 +284,7 @@ void Lexer::reset_reading()
 
 Lexer::~Lexer()
 {
-	for(Token123* ptr: Tokens)
+	for(Token* ptr: Tokens)
 	{
 		delete ptr;
 	}

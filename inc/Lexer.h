@@ -24,12 +24,12 @@ enum Type
 };
 
 // abstract base class
-class Token123
+class Token
 {
 private:
 	Type my_type;
 public:
-	Token123(int _type = 0)
+	Token(int _type = 0)
 	{
 		if (_type == 0) { my_type = Identifier; }
 		else if (_type == 1) { my_type = Integer; }
@@ -38,7 +38,7 @@ public:
 	const Type & getType() const { return my_type; }
 
 	// These methods, having access to the private member of the class, are unsafe to use; 
-	virtual const char* getIdf() = 0;
+	virtual char* getIdf() = 0;
 	virtual int getInt() = 0;
 	virtual char* getOp() = 0;
 
@@ -63,13 +63,13 @@ public:
 	}
 };
 
-class Idf : public Token123
+class Idf : public Token
 {
 private:
 	int len;
 	char* str;
 public:
-	Idf(const char* ch,int _type = 0):Token123(_type)
+	Idf(const char* ch,int _type = 0):Token(_type)
 	{
 		len = strlen(ch);
 		str = new char[len + 1];
@@ -89,7 +89,7 @@ public:
 		std::cout << "My Value is:" << str << std::endl;
 	}
 
-	virtual const char* getIdf() override
+	virtual char* getIdf() override
 	{
 		return str;
 	}
@@ -110,12 +110,12 @@ public:
 	}
 };
 
-class Int : public Token123
+class Int : public Token
 {
 private:
 	int I;
 public:
-	Int(const int _x, int _type = 1) :Token123(_type)
+	Int(const int _x, int _type = 1) :Token(_type)
 	{
 		I = _x;
 	}
@@ -137,7 +137,7 @@ public:
 	}
 
 
-	const char* getIdf() override{
+	char* getIdf() override{
 		return nullptr;
 	}
 
@@ -146,19 +146,19 @@ public:
 	}
 };
 
-class Op : public Token123
+class Op : public Token
 {
 private:
 	// First things to do:
 	char* OP;
 public:
-	Op(const char _op,int _type = 2) :Token123(_type)
+	Op(const char _op,int _type = 2) :Token(_type)
 	{
 		OP = new char[2];
 		OP[0] = _op;
 		OP[1] = '\0';
 	}
-	Op(const char* ch_ptr, int _type = 2) :Token123(_type)
+	Op(const char* ch_ptr, int _type = 2) :Token(_type)
 	{
 		OP = new char[strlen(ch_ptr) + 1];
 		strcpy(OP, ch_ptr);
@@ -179,15 +179,8 @@ public:
 		return OP;
 	}
 
-	const char* getIdf() override{ return nullptr;}
+	char* getIdf() override{ return nullptr;}
 	int getInt() override{ return 0;}
-};
-
-class KeyWord: public Token123
-{
-	char* KW;
-
-
 };
 
 
@@ -195,22 +188,23 @@ class KeyWord: public Token123
 class Lexer
 {
 private:
-	std::vector<Token123*> Tokens;
+	std::vector<Token*> Tokens;
 	int reading_to;
 public:
 	Lexer();
 	// WARNING! MISSING copy_constructor and operator= ;
 
-	Token123* getToken();
+	Token* getToken();
 	void reset_reading();
 	void _Test_Lexer_Check()
 	{
-		for(Token123* p: Tokens)
+		for (Token* p : Tokens)
 		{
 			p->_Test_Show();
 		}
 		std::cout << "endofinput";
 	}
+	void rollBack() { reading_to--; }
 	
 	~Lexer();
 };
