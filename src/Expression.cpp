@@ -136,6 +136,8 @@ int expressionUnary::evaluate()
 	}
 }
 
+// Realization: call parseExpression(), they call each other to get the job done.
+// Functionality: to take care of those expression in brackets -- that is you get the expression inside ( )
 expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketAlreadyIncluded)
 {
 	if (!leftBracketAlreadyIncluded)
@@ -159,6 +161,7 @@ expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketAlreadyInclud
 	
 	return exp1;
 }
+
 
 expression* parseExpression(Lexer* lexer)
 {
@@ -204,8 +207,9 @@ expression* parseExpression(Lexer* lexer)
 	}
 
 }
-// stop at ";" or stop at ?
-// expression1 are sum of many expression2 
+
+// Realization: Idea1: take care of the calculation of order1 and any expression of higher order, we call other parseExpression to process;
+//		Idea2: exp2 = new expressionBinary(exp2, parseExpression2(lexer), tk_check_multiply->getOp()); Recursively generate a expression*;
 expression* parseExpression1(Lexer* lexer)
 {
 	// TODO: will this need to be taken care of (1+2)+3;
@@ -214,6 +218,7 @@ expression* parseExpression1(Lexer* lexer)
 	while (tk_next->getType() == Operator && ((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0)))
 	{
 		// after +(-) three possibilities: 1. ...*... expression2 2. (...) expression   ->->-> 3. expression mixed with expression2
+		// take care of possibility 2
 		expression* exp2 = nullptr;
 		Token* tk_check_parathesis = lexer->getToken();
 		if(tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
@@ -222,6 +227,7 @@ expression* parseExpression1(Lexer* lexer)
 			Token* tk_check_multiply = lexer->getToken(); 
 			if(tk_check_multiply->getType() == Operator && ((strcmp(tk_check_multiply->getOp(), "*") == 0 || strcmp(tk_check_multiply->getOp(), "/") == 0)))
 			{
+				// take care of possibility 3
 				exp2 = new expressionBinary(exp2, parseExpression2(lexer), tk_check_multiply->getOp());
 			}
 			else
@@ -243,7 +249,7 @@ expression* parseExpression1(Lexer* lexer)
 		|| strcmp(tk_next->getOp(), ":") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ">=") == 0 
 		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
 		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0))
-	{ // TODO : CHECK THE CORRECTNESS OF THE ABOVE LINE
+	{ 
 		lexer->rollBack();
 		return exp1;
 	}
@@ -254,7 +260,7 @@ expression* parseExpression1(Lexer* lexer)
 }
 expression* parseExpression2(Lexer* lexer)
 {
-	// TODO: WHY this isn't working?
+
 	expression* exp1 = nullptr;
 	Token* tk_check_parathesis = lexer->getToken();
 	if (tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
@@ -331,3 +337,5 @@ expression* parseExpression4(Lexer* lexer)
 	expression* exp = new expressionBasic(lexer);
 	return exp;
 }
+
+// refer to the order of expressions!
