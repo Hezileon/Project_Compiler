@@ -12,9 +12,10 @@
  * unsupporting types: 12+-12;
  */
 
-std::map<char*, int> IdfToValue;
-int findIdfValue(char* str)
+std::map<std::string, int> IdfToValue;
+int findIdfValue(char* _str)
 {
+	std::string str = _str;
 	if(IdfToValue.count(str))
 	{
 		return IdfToValue[str];
@@ -23,6 +24,12 @@ int findIdfValue(char* str)
 	{
 		return IdfToValue[str] = 0;
 	}
+}
+
+int assignValueToIdf(char* _str,int value)
+{
+	std::string str = _str;
+	return IdfToValue[str] = value;
 }
 
 // constructor

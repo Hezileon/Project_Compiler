@@ -129,12 +129,14 @@
   <ItemGroup>
     <ClInclude Include="inc\Lexer.h" />
     <ClInclude Include="inc\Expression.h" />
+    <ClInclude Include="inc\Statement.h" />
     <ClInclude Include="inc\virtual_computer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Expression.cpp" />
     <ClCompile Include="src\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Statement.cpp" />
     <ClCompile Include="src\virtual_computer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

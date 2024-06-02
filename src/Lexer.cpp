@@ -277,6 +277,9 @@ Lexer::Lexer()
 			if_is_new_object = true;
 		}
 	}
+
+	Token* ptr = new Op{ "EOF" };
+	Tokens.push_back(ptr);
 }
 
 Token* Lexer::getToken()

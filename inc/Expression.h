@@ -1,7 +1,12 @@
 #pragma once
 #ifndef EXPRESSION_H_
 #define EXPRESSION_H_
+#include <map>
+
 #include "Lexer.h"
+extern std::map<std::string, int> IdfToValue;
+int findIdfValue(char* str);
+int assignValueToIdf(char* _str, int value);
 
 enum outcome_type
 {
