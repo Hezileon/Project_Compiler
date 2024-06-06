@@ -75,6 +75,7 @@ seqStatement::seqStatement(Lexer* lexer)
 	}
 }
 
+
 int seqStatement::execute()
 {
 	for(statement* p:seq)

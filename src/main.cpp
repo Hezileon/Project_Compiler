@@ -14,5 +14,7 @@ int main()
 	seqStatement main = seqStatement{ &obj };
 	main.execute();
 
+	//expression* temp = parseExpression(&obj);
+	//cout << temp->evaluate();
 	return 0;
 }

@@ -45,4 +45,7 @@
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="test_lib\text.txt" />
+  </ItemGroup>
 </Project>

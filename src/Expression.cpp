@@ -162,19 +162,24 @@ expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketAlreadyInclud
 		if (tk->getType() == Operator && strcmp(tk->getOp(), ")") == 0) {leftBracketCount--;}
 		else 
 		{
-			std::cerr << "(parseExpressionInBracket ERROR) Expected ) but receive: " << tk->getOp()<<" instead" << std::endl;
+			std::cerr << "(parseExpressionInBracket ERROR) Expected ) but receive: ";
+			if (tk->getType() == Operator) { std::cout << tk->getOp(); }
+		if (tk->getType() == Integer) { std::cout << tk->getInt(); }
+		if (tk->getType() == Identifier) { std::cout << tk->getIdf(); }
+		std::cout << " instead" << std::endl;
 		}
 	}
 	
 	return exp1;
 }
 
-
 expression* parseExpression(Lexer* lexer)
 {
 	expression* exp1_1 = parseExpression1(lexer);
 	Token* tk_1 = lexer->getToken();
-	if (tk_1->getType() == Operator && (strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0))
+	if (tk_1->getType() == Operator && 
+		(strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0 
+		|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0 ))
 	{
 		// exp1
 		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };
@@ -232,7 +237,8 @@ expression* parseExpression1(Lexer* lexer)
 		{
 			exp2 = parseExpressionInBracket(lexer);
 			Token* tk_check_multiply = lexer->getToken(); 
-			if(tk_check_multiply->getType() == Operator && ((strcmp(tk_check_multiply->getOp(), "*") == 0 || strcmp(tk_check_multiply->getOp(), "/") == 0)))
+			if(tk_check_multiply->getType() == Operator && 
+				((strcmp(tk_check_multiply->getOp(), "*") == 0 || strcmp(tk_check_multiply->getOp(), "/") == 0)))
 			{
 				// take care of possibility 3
 				exp2 = new expressionBinary(exp2, parseExpression2(lexer), tk_check_multiply->getOp());
@@ -256,18 +262,27 @@ expression* parseExpression1(Lexer* lexer)
 		|| strcmp(tk_next->getOp(), ":") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ">=") == 0 
 		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
 		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0))
-	{ 
+	{
+		
 		lexer->rollBack();
 		return exp1;
 	}
 	else
 	{
-		std::cerr << "(parseExpression1 error)Expected ; or + or - but receive sth else :" << tk_next->getOp()<<std::endl;
+
+		std::cerr << "(Generate Expression1 ERROR) Expected ; or + or - but receive :";
+		if (tk_next->getType() == Operator) { std::cout << tk_next->getOp(); }
+		if (tk_next->getType() == Integer) { std::cout << tk_next->getInt(); }
+		if (tk_next->getType() == Identifier) { std::cout << tk_next->getIdf(); }
+		std::cout << " instead" << std::endl;
+
+		
 	}
 }
 expression* parseExpression2(Lexer* lexer)
 {
-
+	//TODO: seems that the additional attention at parseExpression1 can save the work of the following codes;
+	/*
 	expression* exp1 = nullptr;
 	Token* tk_check_parathesis = lexer->getToken();
 	if (tk_check_parathesis->getType() == Operator && strcmp(tk_check_parathesis->getOp(), "(") == 0)
@@ -279,6 +294,9 @@ expression* parseExpression2(Lexer* lexer)
 		lexer->rollBack();
 		exp1 = parseExpression3(lexer);
 	}
+	*/
+	expression* exp1 = nullptr;
+	exp1 = parseExpression3(lexer);
 
 	Token* tk_next = lexer->getToken();
 	while (tk_next->getType() == Operator && (strcmp(tk_next->getOp(), "*") == 0 || strcmp(tk_next->getOp(), "/") == 0 ))
@@ -305,7 +323,8 @@ expression* parseExpression2(Lexer* lexer)
 	{// TODO: "(" seems not proper to appear at here;
 		if((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0
 			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0
-			|| strcmp(tk_next->getOp(), "(") == 0 ))
+			|| strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "<") == 0
+			|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), ">=") == 0))
 		{
 			lexer->rollBack();
 		}
