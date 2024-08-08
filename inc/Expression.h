@@ -70,7 +70,6 @@ public:
 	~expressionTernery();
 };
 
-
 class expressionBinary : public expression
 {
 	char* op;
@@ -82,7 +81,6 @@ public:
 	virtual int evaluate() override;
 	~expressionBinary();
 };
-
 
 class expressionUnary : public expression
 {

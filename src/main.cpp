@@ -10,11 +10,8 @@ using namespace std;
 int main()
 {
 	Lexer obj;// the constructor of Lexer will do the job of input;
-	// obj._Test_Lexer_Check();
+	//obj._Test_Lexer_Check();
 	seqStatement main = seqStatement{ &obj };
 	main.execute();
-
-	//expression* temp = parseExpression(&obj);
-	//cout << temp->evaluate();
 	return 0;
 }

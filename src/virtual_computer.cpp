@@ -26,13 +26,14 @@ void Create_global_Complex_Command(Command* ptr, int cid)
 
 void Virtual_Computer_Main()
 {
-    int N;
-    std::cin >> N;
+    int N; // how many functions are there
+    std::cin >> N; 
     Command* main_ptr = nullptr;
     int op, x, y, z;
     for (int i = 0; i < N; i++)
     {
         std::cin >> op;
+        // identify the type of this op
         if (is_single_command(op))
         {
             if (is_binary_operator(op)) { std::cin >> x >> y >> z; }

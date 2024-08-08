@@ -79,8 +79,6 @@ public:
 	virtual void execute() override;
 };
 
-
-
 void Create_global_Complex_Command(Command*ptr, int cid);
 void Virtual_Computer_Main();
 

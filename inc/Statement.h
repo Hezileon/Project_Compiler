@@ -12,7 +12,6 @@ public:
 	virtual int execute() = 0;
 };
 
-
 class assignment : public statement
 {
 private:
@@ -41,16 +40,17 @@ public:
 	~output();
 };
 
+// derived class of class statement, containing "seq" to point at the other type of statement;
 class seqStatement : public statement
 {
 private:
 	std::vector<statement*> seq;
 
 public:
-	seqStatement(Lexer* lexer);
+	seqStatement(Lexer* lexer); // constructor
 	seqStatement(statement* firstStatement);
 
-	void addStatementToTail(statement* newStatement);
+	void addStatementToTail(statement* newStatement); // modify
 
 	int execute() override;
 	~seqStatement();
