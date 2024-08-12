@@ -14,6 +14,8 @@ bool KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char*
 		(last_ch == '-' && ch == '=') ||
 		(last_ch == '*' && ch == '=') ||
 		(last_ch == '/' && ch == '=') ||
+		(last_ch == '|' && ch == '|') ||
+		(last_ch == '&' && ch == '&') ||
 		(last_ch == '+' && ch == '=') ;
 	if(ifIsSpecialCase)
 	{

@@ -135,6 +135,8 @@ int expressionBinary::evaluate()
 	else if (strcmp(op, "<=") == 0) { return exp_1->evaluate() <= exp_2->evaluate(); }
 	else if (strcmp(op, "<") == 0) { return exp_1->evaluate() < exp_2->evaluate(); }
 	else if (strcmp(op, ">") == 0) { return exp_1->evaluate() > exp_2->evaluate(); }
+	else if (strcmp(op, "||") == 0) { return exp_1->evaluate() || exp_2->evaluate(); }
+	else if (strcmp(op, "&&") == 0) { return exp_1->evaluate() && exp_2->evaluate(); }
 	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"<<std::endl; }
 }
 // FOR evaluate_compiler(int pos);
@@ -269,7 +271,7 @@ expression* parseExpressionInBracket(Lexer* lexer, bool leftBracketAlreadyInclud
 	
 	return exp1;
 }
-
+/*
 expression* parseExpression(Lexer* lexer)
 {
 	expression* exp1_1 = parseExpression1(lexer);
@@ -315,11 +317,79 @@ expression* parseExpression(Lexer* lexer)
 		lexer->rollBack();
 		return exp1_1;
 	}
+}
+*/
+expression* parseExpressionCmp(expression* exp1_1, Token* tk_1,Lexer* lexer)
+{
+	if (tk_1->getType() == Operator &&
 
+		(strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0
+			|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0))
+	{
+		// exp1
+		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };
+		
+		return exp_cmp;
+	}
+	else
+	{
+		lexer->rollBack();
+		return exp1_1;
+	}
+}
+
+expression* parseExpression(Lexer* lexer)
+{
+	expression* exp_cmp = parseExpression1(lexer);
+	expression* exp1_1 = nullptr;
+	expression* exp1_2 = nullptr;
+	Token* tk_1 = lexer->getToken();
+	while (tk_1->getType() == Operator && 
+		(strcmp(tk_1->getOp(), "&&") == 0 || strcmp(tk_1->getOp(), "||") == 0 
+			|| strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0
+			|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0))
+	{
+		if (tk_1->getType() == Operator && 
+			(strcmp(tk_1->getOp(), "&&") == 0 || strcmp(tk_1->getOp(), "||") == 0))
+		{
+			// exp_cmp && exp_temp, where exp_temp could be expressionCmp or BoolValue;
+			expression* exp_temp = parseExpression1(lexer);
+			Token* tk_2 = lexer->getToken();
+			exp_temp = parseExpressionCmp(exp_temp, tk_2, lexer);
+			exp_cmp = new expressionBinary(exp_cmp, exp_temp, tk_1->getOp());
+			tk_1 = tk_2;
+		}
+		else
+		{
+			exp_cmp = parseExpressionCmp(exp_cmp, tk_1, lexer);
+		}
+		tk_1 = lexer->getToken();
+	}
+	// i.e. exp_cmp should stop, or it is expression1 instead; 
+	if((tk_1->getType() == Operator && (strcmp(tk_1->getOp(), "?") == 0)))
+	{
+		// exp2
+		exp1_1 = parseExpression1(lexer);
+
+		Token* tk_3 = lexer->getToken();
+		if (tk_3->getType() == Operator && (strcmp(tk_3->getOp(), ":") != 0)) { std::cerr << "right after expressionCmp expected : but receive sth else" << std::endl; }
+		// exp3
+		exp1_2 = parseExpression1(lexer);
+
+		// expression = exp1 ? exp2 : exp3;
+		expression* rtn = new expressionTernery{ exp_cmp, exp1_1, exp1_2 };
+		return rtn;
+	}
+	else
+	{
+		lexer->rollBack();
+		return exp_cmp;
+	}
 }
 
 // Realization: Idea1: take care of the calculation of order1 and any expression of higher order, we call other parseExpression to process;
 //		Idea2: exp2 = new expressionBinary(exp2, parseExpression2(lexer), tk_check_multiply->getOp()); Recursively generate a expression*;
+// expression1-> + -;
 expression* parseExpression1(Lexer* lexer)
 {
 	// TODO: will this need to be taken care of (1+2)+3;
@@ -359,7 +429,8 @@ expression* parseExpression1(Lexer* lexer)
 		(strcmp(tk_next->getOp(), ";") == 0 
 		|| strcmp(tk_next->getOp(), ":") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ">=") == 0 
 		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
-		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0))
+		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0
+		|| strcmp(tk_next->getOp(), "&&") == 0 || strcmp(tk_next->getOp(), "||") == 0))
 	{
 		
 		lexer->rollBack();
@@ -377,6 +448,7 @@ expression* parseExpression1(Lexer* lexer)
 		
 	}
 }
+// * /
 expression* parseExpression2(Lexer* lexer)
 {
 	//TODO: seems that the additional attention at parseExpression1 can save the work of the following codes;
@@ -422,7 +494,8 @@ expression* parseExpression2(Lexer* lexer)
 		if((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0
 			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0
 			|| strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "<") == 0
-			|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), ">=") == 0))
+			|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), ">=") == 0
+			|| strcmp(tk_next->getOp(), "&&") == 0 || strcmp(tk_next->getOp(), "||") == 0))
 		{
 			lexer->rollBack();
 		}
