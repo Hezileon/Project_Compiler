@@ -11,10 +11,11 @@ inline bool isBlank(int ch)
 {
 	return ch == 9 || ch == 10 || ch == 32;
 }
+//+,-,*,/,etc. (To inform lexer of special symbol)
 inline bool isKeyWord(int ch)
 {
 	return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '=' || ch == '(' || ch == ')' || ch == '>' || ch == '<' || ch == '?'
-		|| ch == ':' || ch == ';' || ch == '&' || ch == '|' || ch == '!' ;
+		|| ch == ':' || ch == ';' || ch == '&' || ch == '|' || ch == '!' || ch == '{' || ch == '}' || ch == ',';
 }
 enum Type
 {

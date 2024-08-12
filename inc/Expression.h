@@ -55,6 +55,7 @@ class expression
 private:
 public:
 	virtual int evaluate() = 0;
+	virtual void evaluate_compiler(int pos) = 0;
 };
 
 class expressionTernery : public expression
@@ -67,6 +68,7 @@ public:
 	expressionTernery(expression* _exp_1, expression* _exp_2, expression* _exp_3);
 
 	virtual int evaluate() override;
+	virtual void evaluate_compiler(int pos) override;
 	~expressionTernery();
 };
 
@@ -79,6 +81,7 @@ public:
 	expressionBinary(expression* _exp_1, expression* _exp_2, char* _op);
 
 	virtual int evaluate() override;
+	virtual void evaluate_compiler(int pos) override;
 	~expressionBinary();
 };
 
@@ -89,6 +92,7 @@ class expressionUnary : public expression
 public:
 	expressionUnary(expression* _exp_1,char* _op);
 	virtual int evaluate() override;
+	virtual void evaluate_compiler(int pos) override;
 	~expressionUnary();
 };
 
@@ -111,7 +115,8 @@ public:
 	expressionBasic(Lexer* lexer);
 	expressionBasic(int typeNum, Lexer);// if encounter "("
 
-	virtual int evaluate() override; 
+	virtual int evaluate() override;
+	virtual void evaluate_compiler(int pos) override;
 };
 
 expression* parseExpression(Lexer* lexer);

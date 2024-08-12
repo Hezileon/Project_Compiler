@@ -1,4 +1,5 @@
 #include "../inc/Expression.h"
+#include "../inc/compiler.h"
 
 #include <map>
 #include <cstring>
@@ -11,6 +12,9 @@
  *
  * unsupporting types: 12+-12;
  */
+
+
+// TODO:add "&& || !" feature to expression;
 
 std::map<std::string, int> IdfToValue;
 int findIdfValue(char* _str)
@@ -86,6 +90,33 @@ int expressionBasic::evaluate()
 		return var.exp->evaluate();
 	}
 }
+void expressionBasic::evaluate_compiler(int pos)
+{
+	if (basicType == basicType_idf)
+	{
+		// MARK -> illegal behavior (findIdfValue)
+		std::cout << "0 " << findIdfValue(var.Idf) << " " << " " << " " << pos
+		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
+		<<std::endl;
+		MEM[pos] = findIdfValue(var.Idf); 
+	}
+	else if (basicType == basicType_int)
+	{
+		std::cout << "0 " << var.Int << " " << " " << " " << pos
+		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
+		<< std::endl;
+		MEM[pos] = var.Int;
+	}
+	else if (basicType == basicType_exp)
+	{
+		int posExp = pos + 1;
+		var.exp->evaluate_compiler(posExp);
+		std::cout << "0 " << MEM[posExp] << " " << " " << " " << pos
+		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
+		<< std::endl;
+		MEM[pos] = MEM[posExp];
+	}
+}
 // constructor
 expressionBinary::expressionBinary(expression* _exp_1, expression* _exp_2, char* _op)
 {
@@ -106,6 +137,63 @@ int expressionBinary::evaluate()
 	else if (strcmp(op, ">") == 0) { return exp_1->evaluate() > exp_2->evaluate(); }
 	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"<<std::endl; }
 }
+// FOR evaluate_compiler(int pos);
+void helper_expBi(char* op,int pos,int posE1,int posE2)
+{
+	int num = 0;
+	if (strcmp(op, "+") == 0) { num = 4; }
+	else if (strcmp(op, "-") == 0) {num = 5; }
+	else if (strcmp(op, "*") == 0) { num = 6;}
+	else if (strcmp(op, "/") == 0) { num = 7;}
+	else if (strcmp(op, "==") == 0) { num = 9;}
+	else if (strcmp(op, ">=") == 0) { num = -1; }//!!! TODO
+	else if (strcmp(op, "<=") == 0) { num = -2;} //!!! TODO
+	else if (strcmp(op, "<") == 0) { num = 11;}
+	else if (strcmp(op, ">") == 0) { num = 10;}
+	if(num != -1 && num != -2)
+	{
+		std::cout << num << " " << posE1 << " " << posE2 << " " << pos
+			<< "// 二目运算符指令，语义：MEM[z] = MEM[x] op MEM[y], 处理Binary Expression"
+			<< std::endl;
+	}
+	else
+	{
+		if(num == -1)
+		{
+			std::cout << 11 << " " << posE1 << " " << posE2 << " " << pos + 3
+				<< "// 二目运算符指令，语义：MEM[z] = MEM[x] < MEM[y], 处理Binary Expression (special case >=)"
+				<< std::endl;
+			std::cout << 14 << " " << pos+3 << " " << " " << " " << pos
+				<< "// MEM[z] = !MEM[x] "
+				<< std::endl;
+		}
+		if(num == -2)
+		{
+			std::cout << 12 << " " << posE1 << " " << posE2 << " " << pos + 3
+				<< "// 二目运算符指令，语义：MEM[z] = MEM[x] > MEM[y], 处理Binary Expression (special case <=)"
+				<< std::endl;
+			std::cout << 14 << " " << pos + 3 << " " << " " << " " << pos
+				<< "// MEM[z] = !MEM[x] "
+				<< std::endl;
+		}
+	}
+	
+}
+void expressionBinary::evaluate_compiler(int pos)
+{
+	int posExp1, posExp2; posExp1 = pos + 1; posExp2 = pos + 2; // calculate posExp1 first, otherwise the already saved MEM[posExp2] will be changed;
+
+	if (strcmp(op, "+") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op, pos, posExp1, posExp2); MEM[pos] = MEM[posExp1]+MEM[posExp2]; }
+	else if (strcmp(op, "-") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]-MEM[posExp2];}
+	else if (strcmp(op, "*") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]*MEM[posExp2];}
+	else if (strcmp(op, "/") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]/MEM[posExp2];}
+	else if (strcmp(op, "==") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]==MEM[posExp2];}
+	else if (strcmp(op, ">=") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>=MEM[posExp2];}
+	else if (strcmp(op, "<=") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<=MEM[posExp2];}
+	else if (strcmp(op, "<") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<MEM[posExp2];}
+	else if (strcmp(op, ">") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>MEM[posExp2];}
+	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary" << std::endl;}
+}
 // constructor
 expressionTernery::expressionTernery(expression* _exp_1, expression* _exp_2, expression* _exp_3)
 {
@@ -125,6 +213,10 @@ int expressionTernery::evaluate()
 		return exp_2->evaluate();
 	}
 }
+void expressionTernery::evaluate_compiler(int pos)
+{
+	//TODO
+}
 // constructor
 expressionUnary::expressionUnary(expression* _exp_1, char* _op)
 {
@@ -142,6 +234,11 @@ int expressionUnary::evaluate()
 		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead"<<std::endl;
 	}
 }
+void expressionUnary::evaluate_compiler(int pos)
+{
+	//TODO
+}
+
 
 // Realization: call parseExpression(), they call each other to get the job done.
 // Functionality: to take care of those expression in brackets -- that is you get the expression inside ( )
@@ -177,9 +274,9 @@ expression* parseExpression(Lexer* lexer)
 {
 	expression* exp1_1 = parseExpression1(lexer);
 	Token* tk_1 = lexer->getToken();
-	if (tk_1->getType() == Operator && 
+	if (tk_1->getType() == Operator &&
 		(strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0 
-		|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0 ))
+		|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0 || strcmp(tk_1->getOp(), "&&") == 0 || strcmp(tk_1->getOp(), "<") == 0))
 	{
 		// exp1
 		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };

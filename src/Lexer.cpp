@@ -2,7 +2,8 @@
 
 #include <string>
 #include <cctype>
-
+// TODO: widen your definition of identifier
+// to identify cases like "==",">=",etc.
 bool KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token*>& Tokens)
 {
 	char last_ch = temp_ch[counter - 1];
@@ -36,7 +37,7 @@ Lexer::Lexer()
 	int ch = 0;
 	char temp_ch[50];
 	int counter = 0;
-	while((ch=getchar())!=26 && ch != EOF)
+	while((ch=getchar())!=26 && ch != EOF)//???? 
 	{
 		if(if_is_new_object)
 		{
@@ -217,7 +218,7 @@ Lexer::Lexer()
 				{
 					if(KeyWordspecialCase(if_is_new_object, currentType, ch, temp_ch, counter, Tokens))
 					{
-						
+						// i.e. we are dealing with case:"==",">=" etc.
 					}
 					else
 					{

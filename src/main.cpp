@@ -1,6 +1,7 @@
 #include "../inc/Lexer.h"
 #include <iostream>
-#include "../inc/virtual_computer.h"
+#include "../inc/virtual_computer_advanced.h"
+//#include "../inc/virtual_computer.h"
 #include "../inc/Expression.h"
 #include "../inc/Statement.h"
 using namespace std;
@@ -9,9 +10,13 @@ using namespace std;
 
 int main()
 {
+	
 	Lexer obj;// the constructor of Lexer will do the job of input;
 	//obj._Test_Lexer_Check();
 	seqStatement main = seqStatement{ &obj };
 	main.execute();
 	return 0;
+	
+
+	//Virtual_Computer_Advanced_Main();
 }

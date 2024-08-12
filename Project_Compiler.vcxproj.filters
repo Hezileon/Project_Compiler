@@ -18,13 +18,19 @@
     <ClInclude Include="inc\Lexer.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="inc\virtual_computer.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="inc\Expression.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="inc\Statement.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\virtual_computer_advanced.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\compiler.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\preprocesser.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,13 +41,19 @@
     <ClCompile Include="src\Lexer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\virtual_computer.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="src\Expression.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\Statement.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\virtual_computer_advanced.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\compiler.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\preprocesser.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
