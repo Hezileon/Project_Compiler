@@ -231,6 +231,10 @@ int expressionUnary::evaluate()
 	{
 		return (- 1)* exp_1->evaluate();
 	}
+	else if (strcmp(op, "!") == 0)
+	{
+		return !exp_1->evaluate();
+	}
 	else
 	{
 		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead"<<std::endl;
@@ -512,6 +516,12 @@ expression* parseExpression3(Lexer* lexer)
 
 	
 	if (tk_next->getType() == Operator && strcmp(tk_next->getOp(), "-") == 0)
+	{
+		expression* exp = parseExpression4(lexer);
+		expression* rtn = new expressionUnary{ exp, tk_next->getOp() };
+		return rtn;
+	}
+	else if (tk_next->getType() == Operator && strcmp(tk_next->getOp(), "!") == 0)
 	{
 		expression* exp = parseExpression4(lexer);
 		expression* rtn = new expressionUnary{ exp, tk_next->getOp() };
