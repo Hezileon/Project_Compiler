@@ -275,8 +275,9 @@ expression* parseExpression(Lexer* lexer)
 	expression* exp1_1 = parseExpression1(lexer);
 	Token* tk_1 = lexer->getToken();
 	if (tk_1->getType() == Operator &&
+
 		(strcmp(tk_1->getOp(), "==") == 0 || strcmp(tk_1->getOp(), ">=") == 0 || strcmp(tk_1->getOp(), "<=") == 0 
-		|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0 )
+		|| strcmp(tk_1->getOp(), "<") == 0 || strcmp(tk_1->getOp(), ">") == 0 ) )
 	{
 		// exp1
 		expression* exp_cmp = new expressionBinary{ exp1_1, parseExpression1(lexer), tk_1->getOp() };
