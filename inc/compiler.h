@@ -5,6 +5,4 @@
 // ÊäÈëGlobal Environment£¬Öğ¾äÊä³öASM
 
 extern int MEM[500];
-
-
 #endif

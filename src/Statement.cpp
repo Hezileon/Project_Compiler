@@ -1,14 +1,19 @@
 #include "../inc/Statement.h"
-
 #include "../inc/Expression.h"
-
+#include "../inc/compiler.h"
+extern int MEM[500];
+extern int LC;
+extern bool anotationModeOn;
+extern bool lineCounterModeOn;
 assignment::assignment(char* _idf, char* _op, expression* _exp)
 	: idf(_idf),op(_op),exp(_exp)
 {}
 
 int assignment::execute()
 {
-	return assignValueToIdf(idf,exp->evaluate());
+	exp->evaluate_compiler(0);
+	return assignValueToIdf(idf,MEM[0]);
+	//return assignValueToIdf(idf,exp->evaluate());
 }
 
 output::output(char* _op, char* _idf)
@@ -17,6 +22,12 @@ output::output(char* _op, char* _idf)
 
 int output::execute()
 {
+	if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+	std::cout << 50 << " " << 0 << " " << " " << " " << " "; //TODO £º allocate memory for variable x, don't use the memory 0;
+	if (anotationModeOn) std::cout << "// ...";
+	std::cout << std::endl;
+
+
 	std::cout << findIdfValue(idf) << std::endl;
 	return findIdfValue(idf);
 }

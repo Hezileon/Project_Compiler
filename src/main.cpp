@@ -10,13 +10,21 @@ using namespace std;
 
 int main()
 {
-	
-	Lexer obj;// the constructor of Lexer will do the job of input;
-	//obj._Test_Lexer_Check();
-	seqStatement main = seqStatement{ &obj };
-	main.execute();
+	bool compilerModeOn = false;
+	//bool compilerModeOn = true;
+	if(compilerModeOn)
+	{
+		Lexer obj;// the constructor of Lexer will do the job of input;
+		//obj._Test_Lexer_Check();
+		seqStatement main = seqStatement{ &obj };
+		main.execute();
+	}
+	else
+	{
+		Virtual_Computer_Advanced_Main();
+	}
 	return 0;
 	
 
-	//Virtual_Computer_Advanced_Main();
+	
 }

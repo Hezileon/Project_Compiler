@@ -2,18 +2,18 @@
 
 #include <iostream>
 #include <vector>
-static int MEM[500] = {};
+static int MEM_VC[500] = {};
 static int pc = 0;
 std::vector<Cmd*> computer;
 
 
 void Cmd::execute()
 {
-    if(isControlOperator(op))
+    if (isControlOperator(op))
     {
         if (op == 20)
         {
-            if (MEM[x])
+            if (MEM_VC[x])
             {
                 pc = z;
             }
@@ -28,7 +28,7 @@ void Cmd::execute()
         }
         if (op == 40)
         {
-            pc = MEM[z];
+            pc = MEM_VC[z];
         }
     }
     else
@@ -36,25 +36,26 @@ void Cmd::execute()
         pc++;
         if (op == 0)
         {
-            MEM[z] = x;
+            MEM_VC[z] = x;
         }
         if (op == 1)
         {
-            MEM[y + MEM[z]] = MEM[x];
+            MEM_VC[y + MEM_VC[z]] = MEM_VC[x];
         }
         if (op == 2)
         {
-            MEM[z] = MEM[x + MEM[y]];
+            MEM_VC[z] = MEM_VC[x + MEM_VC[y]];
         }
         if (op == 3)
         {
-            MEM[z] = MEM[x];
+            
+            MEM_VC[z] = MEM_VC[x];
         }
         if (4 <= op && op <= 13)
         {
             int ans;
-            int _x = MEM[x];
-            int _y = MEM[y];
+            int _x = MEM_VC[x];
+            int _y = MEM_VC[y];
             if (op == 4) { ans = _x + _y; }
             if (op == 5) { ans = _x - _y; }
             if (op == 6) { ans = _x * _y; }
@@ -68,29 +69,29 @@ void Cmd::execute()
             if (op == 12) { ans = xis1 && yis1; }
             if (op == 13) { ans = xis1 || yis1; }
 
-            MEM[z] = ans;
+            MEM_VC[z] = ans;
         }
         if (op == 14)
         {
-            bool xis1 = MEM[x];
-            MEM[z] = !xis1;
+            bool xis1 = MEM_VC[x];
+            MEM_VC[z] = !xis1;
         }
         if (op == 50)
         {
-            std::cout << MEM[x] << " ";
+            std::cout << MEM_VC[x] << " ";
         }
         if (op == 60)
         {
-            std::cin >> MEM[x];
+            std::cin >> MEM_VC[x];
         }
     }
 }
 
 void Virtual_Computer_Advanced_Main()
 {
-    
+
     int op, x, y, z;
-    while(std::cin>>op)
+    while (std::cin >> op)
     {
         if (op == -1) { break; } // cin negative op to stop the loop;
         // identify the type of this op
@@ -98,14 +99,14 @@ void Virtual_Computer_Advanced_Main()
         {
             if (isBinaryOperator(op)) { std::cin >> x >> y >> z; }
             else if (isUnaryOperatorX(op)) { std::cin >> x; y = z = -1; }
-        	else if (isUnaryOperatorZ(op)) { std::cin >> z; y = x = -1; }
+            else if (isUnaryOperatorZ(op)) { std::cin >> z; y = x = -1; }
             else { std::cin >> x >> z; y = -1; }
             Cmd* p = new Cmd(op, x, y, z);
             computer.push_back(p);
         }
     }
     pc = 0;
-    while(pc>=0 && pc <computer.size())
+    while (pc >= 0 && pc < computer.size())
     {
         computer[pc]->execute();
     }

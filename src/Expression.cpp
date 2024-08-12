@@ -14,7 +14,20 @@
  */
 
 
-// TODO:add "&& || !" feature to expression;
+/*
+ *
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << asm_num << " " << x << " " << y << " " << z;
+		if (anotationModeOn) std::cout << "// ...";
+		std::cout << std::endl;
+ *
+ *
+ */
+
+extern bool anotationModeOn = false;
+extern bool lineCounterModeOn = false;
+extern int LC;
+// TODO: refine the order of "!";
 
 std::map<std::string, int> IdfToValue;
 int findIdfValue(char* _str)
@@ -95,25 +108,29 @@ void expressionBasic::evaluate_compiler(int pos)
 	if (basicType == basicType_idf)
 	{
 		// MARK -> illegal behavior (findIdfValue)
-		std::cout << "0 " << findIdfValue(var.Idf) << " " << " " << " " << pos
-		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
-		<<std::endl;
-		MEM[pos] = findIdfValue(var.Idf); 
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "0 " << findIdfValue(var.Idf) << " " << " " << " " << pos;
+		if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+		std::cout << std::endl;
+		MEM[pos] = findIdfValue(var.Idf);
 	}
 	else if (basicType == basicType_int)
 	{
-		std::cout << "0 " << var.Int << " " << " " << " " << pos
-		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
-		<< std::endl;
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "0 " << var.Int << " " << " " << " " << pos;
+		if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+		std::cout << std::endl;
 		MEM[pos] = var.Int;
 	}
 	else if (basicType == basicType_exp)
 	{
 		int posExp = pos + 1;
 		var.exp->evaluate_compiler(posExp);
-		std::cout << "0 " << MEM[posExp] << " " << " " << " " << pos
-		<< "// 常量存储，语义：MEM[pos] = i, 处理Basic Expression"
-		<< std::endl;
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "0 " << MEM[posExp] << " " << " " << " " << pos;
+		if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+		std::cout << std::endl;
 		MEM[pos] = MEM[posExp];
 	}
 }
@@ -137,46 +154,55 @@ int expressionBinary::evaluate()
 	else if (strcmp(op, ">") == 0) { return exp_1->evaluate() > exp_2->evaluate(); }
 	else if (strcmp(op, "||") == 0) { return exp_1->evaluate() || exp_2->evaluate(); }
 	else if (strcmp(op, "&&") == 0) { return exp_1->evaluate() && exp_2->evaluate(); }
-	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary"<<std::endl; }
+	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary" << std::endl; }
 }
-// FOR evaluate_compiler(int pos);
-void helper_expBi(char* op,int pos,int posE1,int posE2)
+		// FOR evaluate_compiler(int pos);
+void helper_expBi(char* op, int pos, int posE1, int posE2)
 {
 	int num = 0;
 	if (strcmp(op, "+") == 0) { num = 4; }
-	else if (strcmp(op, "-") == 0) {num = 5; }
-	else if (strcmp(op, "*") == 0) { num = 6;}
-	else if (strcmp(op, "/") == 0) { num = 7;}
-	else if (strcmp(op, "==") == 0) { num = 9;}
-	else if (strcmp(op, ">=") == 0) { num = -1; }//!!! TODO
-	else if (strcmp(op, "<=") == 0) { num = -2;} //!!! TODO
-	else if (strcmp(op, "<") == 0) { num = 11;}
-	else if (strcmp(op, ">") == 0) { num = 10;}
-	if(num != -1 && num != -2)
+	else if (strcmp(op, "-") == 0) { num = 5; }
+	else if (strcmp(op, "*") == 0) { num = 6; }
+	else if (strcmp(op, "/") == 0) { num = 7; }
+	else if (strcmp(op, "==") == 0) { num = 9; }
+	else if (strcmp(op, ">=") == 0) { num = -1; }
+	else if (strcmp(op, "<=") == 0) { num = -2; }
+	else if (strcmp(op, ">") == 0) { num = 10; }
+	else if (strcmp(op, "<") == 0) { num = 11; }
+	else if (strcmp(op, "||") == 0) { num = 13; }
+	else if (strcmp(op, "&&") == 0) { num = 12; }
+	if (num != -1 && num != -2)
 	{
-		std::cout << num << " " << posE1 << " " << posE2 << " " << pos
-			<< "// 二目运算符指令，语义：MEM[z] = MEM[x] op MEM[y], 处理Binary Expression"
-			<< std::endl;
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << num << " " << posE1 << " " << posE2 << " " << pos;
+		if (anotationModeOn)std::cout << "// 二目运算符指令，语义：MEM[z] = MEM[x] op MEM[y],处理Binary Expression";
+		std::cout << std::endl;
 	}
 	else
 	{
-		if(num == -1)
+		if (num == -1)
 		{
-			std::cout << 11 << " " << posE1 << " " << posE2 << " " << pos + 3
-				<< "// 二目运算符指令，语义：MEM[z] = MEM[x] < MEM[y], 处理Binary Expression (special case >=)"
-				<< std::endl;
-			std::cout << 14 << " " << pos+3 << " " << " " << " " << pos
-				<< "// MEM[z] = !MEM[x] "
-				<< std::endl;
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 11 << " " << posE1 << " " << posE2 << " " << pos + 3;
+			if(anotationModeOn)std::cout << "// 二目运算符指令，语义：MEM[z] = MEM[x] < MEM[y],处理Binary Expression (special case >=)";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 14 << " " << pos + 3 << " " << " " << " " << pos;
+			if (anotationModeOn)std::cout << "// MEM[z] = !MEM[x] ";
+			std::cout << std::endl;
 		}
-		if(num == -2)
+		if (num == -2)
 		{
-			std::cout << 12 << " " << posE1 << " " << posE2 << " " << pos + 3
-				<< "// 二目运算符指令，语义：MEM[z] = MEM[x] > MEM[y], 处理Binary Expression (special case <=)"
-				<< std::endl;
-			std::cout << 14 << " " << pos + 3 << " " << " " << " " << pos
-				<< "// MEM[z] = !MEM[x] "
-				<< std::endl;
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 12 << " " << posE1 << " " << posE2 << " " << pos + 3;
+			if (anotationModeOn)std::cout << "// 二目运算符指令，语义：MEM[z] = MEM[x] > MEM[y],处理Binary Expression (special case <=)";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 14 << " " << pos + 3 << " " << " " << " " << pos;
+			if (anotationModeOn)std::cout << "// MEM[z] = !MEM[x] ";
+			std::cout << std::endl;;
 		}
 	}
 	
@@ -194,8 +220,11 @@ void expressionBinary::evaluate_compiler(int pos)
 	else if (strcmp(op, "<=") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<=MEM[posExp2];}
 	else if (strcmp(op, "<") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<MEM[posExp2];}
 	else if (strcmp(op, ">") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>MEM[posExp2];}
+	else if (strcmp(op, "||") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]||MEM[posExp2];}
+	else if (strcmp(op, "&&") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]&&MEM[posExp2];}
 	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary" << std::endl;}
 }
+
 // constructor
 expressionTernery::expressionTernery(expression* _exp_1, expression* _exp_2, expression* _exp_3)
 {
@@ -217,8 +246,29 @@ int expressionTernery::evaluate()
 }
 void expressionTernery::evaluate_compiler(int pos)
 {
-	//TODO
+	int exp1_pos = pos+1;
+	int exp_pos = pos+2;
+	int nLine1 = exp_1->lineCount_comp();
+	int nLine2 = exp_2->lineCount_comp();
+	int nLine3 = exp_3->lineCount_comp();
+
+	exp_1->evaluate_compiler(exp1_pos);	
+	exp_2->evaluate_compiler(exp_pos);
+	if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+	std::cout << 20 << " " << exp1_pos << " " << " " << " " << LC+nLine3;
+	if (anotationModeOn) std::cout << "// 如果MEM[x]的值非零，跳转到第z条指令继续执行, 即跳过exp_3的计算，避免了exp_2的值被覆盖";
+	std::cout << std::endl;
+	exp_3->evaluate_compiler(exp_pos);
+	
+	if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+	std::cout << 3 << " " << exp_pos << " " << " " << " " << pos;
+	if (anotationModeOn) std::cout << "// 拷贝指令，语义：MEM[y] = MEM[x], 即将exp_pos拷贝到pos";
+	std::cout << std::endl;
+	MEM[pos] = exp_1->evaluate() ? exp_2->evaluate() : exp_3->evaluate();
+
 }
+
+
 // constructor
 expressionUnary::expressionUnary(expression* _exp_1, char* _op)
 {
@@ -242,7 +292,39 @@ int expressionUnary::evaluate()
 }
 void expressionUnary::evaluate_compiler(int pos)
 {
-	//TODO
+	
+	int exp_1Pos = pos + 1;
+	if (strcmp(op, "-") == 0)
+	{
+		exp_1->evaluate_compiler(exp_1Pos);
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "0 " << 0 << " " << " " << " " << pos+2;
+		if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = 0, 和后一步配合实现取负";
+		std::cout << std::endl;
+		MEM[exp_1Pos + 1] = 0;// note that: exp_1Pos = pos+1
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "5 " << pos+2 << " " << exp_1Pos << " " << pos;
+		if (anotationModeOn)std::cout << "// 二目运算符指令，语义：MEM[z] = MEM[x] - MEM[y]";
+		std::cout << std::endl;
+		MEM[pos] = MEM[exp_1Pos + 1]-MEM[exp_1Pos];
+	}
+	else if (strcmp(op, "!") == 0)
+	{
+		exp_1->evaluate_compiler(exp_1Pos);
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "14 " << exp_1Pos << " " << " " << " " << pos;
+		if (anotationModeOn)std::cout << "// MEM[z] = !MEM[x]";
+		std::cout << std::endl;
+
+		MEM[pos] =!MEM[exp_1Pos];
+	}
+	else
+	{
+		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead" << std::endl;
+	}
 }
 
 
@@ -396,7 +478,6 @@ expression* parseExpression(Lexer* lexer)
 // expression1-> + -;
 expression* parseExpression1(Lexer* lexer)
 {
-	// TODO: will this need to be taken care of (1+2)+3;
 	expression* exp1 = parseExpression2(lexer);
 	Token* tk_next = lexer->getToken();
 	while (tk_next->getType() == Operator && ((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0)))
@@ -494,7 +575,7 @@ expression* parseExpression2(Lexer* lexer)
 		tk_next = lexer->getToken();
 	}
 	if (tk_next->getType() == Operator )
-	{// TODO: "(" seems not proper to appear at here;
+	{
 		if((strcmp(tk_next->getOp(), "+") == 0 || strcmp(tk_next->getOp(), "-") == 0 || strcmp(tk_next->getOp(), ")") == 0
 			|| strcmp(tk_next->getOp(), ";") == 0 || strcmp(tk_next->getOp(), "?") == 0 || strcmp(tk_next->getOp(), ":") == 0
 			|| strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "<") == 0

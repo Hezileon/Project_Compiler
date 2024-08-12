@@ -1,9 +1,10 @@
 #include "../inc/Lexer.h"
-
+#include "../inc/compiler.h"
 #include <string>
 #include <cctype>
 // TODO: widen your definition of identifier
 // to identify cases like "==",">=",etc.
+
 bool KeyWordspecialCase(bool& if_is_new_object,Type& currentType, int& ch, char* temp_ch, int& counter, std::vector<Token*>& Tokens)
 {
 	char last_ch = temp_ch[counter - 1];
