@@ -4,7 +4,6 @@
 #include <map>
 #include <cstring>
 
-#include "../inc/preprocessor.h"
 /*
  * supporting types:
  * expression_cmp: 123 ? 2 : 1; 123 >= 122 ? 2 : 1
@@ -119,7 +118,7 @@ void expressionBasic::evaluate_compiler(int pos)
 			std::cout << std::endl;
 		}
 		
-		MEM[pos] = MEM[GlobalNameToAddress(var.Idf)];
+		MEM[pos] = MEM[NameToAddress(var.Idf)];
 	}
 	else if (basicType == basicType_int)
 	{

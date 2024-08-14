@@ -1,5 +1,4 @@
 #include "../inc/preprocessor.h"
-#include "../inc/Statement.h"
 /*
  *1. generate blocks and else
  *2. get the statics
@@ -14,6 +13,7 @@ class output;
 class assignment;
 class ifStatement;
 class functionCall;
+
 
 inline void eolCheck(Lexer* lexer,Token* tk_1) 
 {
@@ -40,13 +40,8 @@ inline bool quitBlockCheck(Lexer* lexer)
 	}
 }
 
-int TagAllocator()
-{
-	static int tagCnt = 0;
-	return tagCnt++;
-}
 
-block::block(Lexer* lexer,environment* myEnvironment)
+block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 {
 	for (Token* tk_1 = lexer->getToken();
 		!(tk_1->getType() == Operator && strcmp(tk_1->getOp(), "EOF") == 0);
@@ -56,36 +51,52 @@ block::block(Lexer* lexer,environment* myEnvironment)
 		// we didn't give Output a special type, just use them as identifier;
 		if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "Output") == 0 || strcmp(tk_1->getIdf(), "output") == 0))
 		{
-			Token* tk_2 = lexer->getToken();
-			statement* ptr = new output{ tk_1->getIdf(),tk_2->getIdf() };
+			expression* exp = parseExpression(lexer);
+			statement* ptr = new output{ tk_1->getIdf(),exp };
 			this->pushStatement(ptr);
 
 			tk_1 = lexer->getToken();
 			eolCheck(lexer, tk_1);
 			if (quitBlockCheck(lexer))
 			{
-				statement* rtn = new returnStatement();
+				statement* rtn = nullptr;
+				if(myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}else
+				{
+					rtn = new returnStatement();
+				}
 				this->pushStatement(rtn);
+				
 				break;
 			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "VAR") == 0 || strcmp(tk_1->getIdf(), "Var") == 0))
 		{
 			Token* tk_2 = lexer->getToken();
-			statement* ptr = new varDecl{ tk_2->getIdf() };
+			statement* ptr = new varDecl{ tk_2->getIdf(),myEnv };
 			this->pushStatement(ptr);
-			myEnvironment->createVar(tk_2->getIdf());
-
+			myEnv->createVar(tk_2->getIdf());
 			tk_1 = lexer->getToken();
 			eolCheck(lexer, tk_1);
 			if (quitBlockCheck(lexer)) {
-				statement* rtn = new returnStatement();
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
 				this->pushStatement(rtn);
 				break;
 			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "Def") == 0 || strcmp(tk_1->getIdf(), "DEF") == 0))
 		{
+			
 			Token* tk_2 = lexer->getToken(); // tk_2 is function_name;
 			functionDef* ptr = new functionDef(tk_2->getIdf());
 
@@ -93,7 +104,7 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			if (tk_3->getType() == Operator && strcmp(tk_3->getOp(), "(") == 0) {}
 			else { std::cout << "Expected '(' right after function name but receive something else: ..." << std::endl; }
 			tk_3 = lexer->getToken();Token* tk_4 = lexer->getToken();
-			environment* funcEnv = new environment(myEnvironment);
+			environment* funcEnv = new environment(myEnv);
 			while (tk_3->getType() != Operator)
 			{
 				ptr->createPara(tk_4->getIdf());
@@ -103,14 +114,28 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			}
 
 			
-			myEnvironment->createFunc(tk_2->getIdf(), ptr->getPSize());
+			myEnv->createFunc(tk_2->getIdf(), ptr->getPSize());
 			// def func(){} therefore tk_4 should be {
 
 			block* funcBlock = new block(lexer, funcEnv);
-			myEnvironment->updateDest(tk_2->getIdf(), ptr->getPSize(), funcBlock);
+			myEnv->updateDest(tk_2->getIdf(), ptr->getPSize(), funcBlock);
 
 			statement* ptr2 = ptr;
 			this->pushStatement(ptr2);
+
+			if (quitBlockCheck(lexer)) {
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
+				this->pushStatement(rtn);
+				break;
+			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "input") == 0 || strcmp(tk_1->getIdf(), "Input") == 0))
 		{
@@ -122,20 +147,29 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			tk_1 = lexer->getToken();
 			eolCheck(lexer, tk_1);
 			if (quitBlockCheck(lexer)) {
-				statement* rtn = new returnStatement();
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
 				this->pushStatement(rtn);
 				break;
 			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "if") == 0 || strcmp(tk_1->getIdf(), "If") == 0))
 		{
+
 			expression* cond = parseExpression(lexer);
 			
 			block* ifB = nullptr; block* elseB = nullptr;
 			tk_1 = lexer->getToken();
 			if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), "{") == 0)
 			{
-				environment* ifEnv = new environment(myEnvironment);
+				environment* ifEnv = new environment(myEnv);
 				ifB = new block(lexer, ifEnv);
 			}
 			else
@@ -149,7 +183,7 @@ block::block(Lexer* lexer,environment* myEnvironment)
 				tk_1 = lexer->getToken();
 				if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), "{") == 0)
 				{
-					environment* elseEnv = new environment(myEnvironment);
+					environment* elseEnv = new environment(myEnv);
 					elseB = new block(lexer,elseEnv);
 				}
 				else
@@ -160,7 +194,21 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			else { lexer->rollBack(); }
 			
 			statement* ptr = new ifStatement(cond, this,ifB,elseB);
-			this->pushStatement(ptr); 
+			this->pushStatement(ptr);
+
+			if (quitBlockCheck(lexer)) {
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
+				this->pushStatement(rtn);
+				break;
+			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "while") == 0 || strcmp(tk_1->getIdf(), "While") == 0))
 		{
@@ -170,7 +218,7 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			tk_1 = lexer->getToken();
 			if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), "{") == 0)
 			{
-				environment* ifEnv = new environment(myEnvironment);
+				environment* ifEnv = new environment(myEnv,cond);
 				whileB = new block(lexer, ifEnv);
 			}
 			else
@@ -179,6 +227,19 @@ block::block(Lexer* lexer,environment* myEnvironment)
 			}
 			statement* ptr = new whileStatement(cond,this ,whileB);
 			this->pushStatement(ptr);
+			if (quitBlockCheck(lexer)) {
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
+				this->pushStatement(rtn);
+				break;
+			}
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "return") == 0 || strcmp(tk_1->getIdf(), "Return") == 0))
 		{
@@ -212,7 +273,15 @@ block::block(Lexer* lexer,environment* myEnvironment)
 				std::cout << " instead" << std::endl;
 			}
 			if (quitBlockCheck(lexer)) {
-				statement* rtn = new returnStatement();
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
 				this->pushStatement(rtn);
 				break;
 			}
@@ -236,3 +305,49 @@ preprocessor::preprocessor(Lexer* lexer)
 }
 
 extern int MEM[500];
+
+void ifStatement::execute()
+{
+	block* dest = nullptr;
+	cond->evaluate_compiler(0);
+	if (MEM[0])//??
+	{
+		dest = ifBlock;
+	}
+	else
+	{
+		dest = elseBlock;
+	}
+
+	if (dest != nullptr)
+	{
+		processor.push_JmpDest(dest);
+		processor.push_RtnDest(myBlock);
+		processor.push_RtnPos(myBlock->getCurPos());
+
+		int offset = dest->getMyEnv()->getVarCnt();
+		MEM[MEM[200] + 1] = offset;
+		MEM[200] = MEM[200] + offset;
+
+		processor.jump();
+	}
+
+}
+
+void whileStatement::execute()
+{
+	cond->evaluate_compiler(0);
+	if (MEM[0])
+	{
+		processor.push_JmpDest(whileBlock);
+		processor.push_RtnDest(myBlock);
+		processor.push_RtnPos(myBlock->getCurPos());
+
+		int offset = whileBlock->getMyEnv()->getVarCnt();
+		MEM[MEM[200] + 1] = offset;
+		MEM[200] = MEM[200] + offset;
+
+		processor.jump();
+	}
+}
+

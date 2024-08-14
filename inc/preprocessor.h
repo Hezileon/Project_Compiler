@@ -23,7 +23,7 @@ inline std::string funcName_generate(char* c, int psize) {
 	for (int i = 0; i < psize; i++) func = func + "i";
 	return func;
 }
-inline int GlobalNameToAddress(char* c);
+inline int NameToAddress(char* c);
 class block
 {
 private:
@@ -99,8 +99,15 @@ public:
 		rtnDest_s.pop();
 		rtnPos_s.pop();
 	}
+	void Return_While()
+	{
+		nextPos = 0;
+	}
 	void execute()
 	{
+		// MAIN_PROCESS_LOOP
+		MEM[200] = 200;
+
 		curBlock->setPos(nextPos++);
 		statement* ptr = curBlock->getNextStatement();
 		while(ptr != nullptr)
@@ -110,34 +117,42 @@ public:
 		}
 	}
 
+	environment* getCurEnv() { return curEnv; }
+
 	preprocessor(Lexer* lexer);
 	~preprocessor(){}
 };
 
 extern preprocessor processor;
 
-
 class environment
 {
 private:
+	environment* f_env;
+	bool isWhileBlock;
+	expression* cond;
+	int varCnt;
+
+	int offsetAllo;
+
 	std::vector<std::string> varTbl;
 	std::vector<std::string> funcTbl;
-	std::map<std::string, int> Value;
+	std::map<std::string, int> Value; 
 	std::map<std::string, block*> Dest;
 
-	environment* f_env;
-
 public:
-	environment( environment* fE) : f_env(fE) {}
+	environment(environment* fE) : f_env(fE), isWhileBlock(false), cond(nullptr) { offsetAllo = 0; }
+	environment(environment* fE,expression* cd) : f_env(fE),isWhileBlock(true),cond(cd) { offsetAllo = 0; }
 	~environment(){}
 
+	// use this when we are preprocessing the code, not when executing. And plz make sure you use the member function;
 	void createVar(char* c)
 	{
-		std::string var = c; if (!Value.count(var)) { varTbl.push_back(var); Value[var] = 0; }
+		std::string var = c; if (!Value.count(var)) { varTbl.push_back(var); Value[var] = offsetAllo++; varCnt++; }
 	}
 	void updateValue(char* c, int value)
 	{
-		std::string var = c; Value[var] = value;
+		std::string var = c; MEM[Value[var]] = value;
 	}
 	void createFunc(char* c, int psize)
 	{
@@ -146,9 +161,19 @@ public:
 	}
 	void updateDest(char* c, int psize, block* dest) {
 		std::string func = funcName_generate(c, psize); Dest[func] = dest; }
+	bool KeyValueFound(char* c)
+	{
+		std::string var = c;
+		return Value.count(var);
+	} // TODO-1 realize The search order of multiple env; -> look into expression
 	int readValue(char* c) {
-		std::string var = c; if (Value.count(var)) { return Value[var]; }
-		else { std::cout << "Key value doesn't exist;" << std::endl; return 0; }
+		std::string var = c;
+		if (Value.count(var)) { return MEM[Value[var]]; }
+	}
+	int readAddr(char* c)
+	{
+		std::string var = c;
+		if (Value.count(var)) { return Value[var]; }
 	}
 	block* readDest(char* c, int pSize)
 	{
@@ -163,6 +188,12 @@ public:
 		else { rtn = Dest[func]; }
 		return rtn;
 	}
+	bool ifIsWhileBlock() { return isWhileBlock; }
+	expression* getCond() { return cond; }
+	int getVarCnt() { return varCnt; }
+	bool isGlobalEnv() { return f_env == nullptr;}
+	environment* getFEnv() { return f_env; }
+	
 };
 
 
@@ -185,10 +216,10 @@ class output : public statement
 {
 private:
 	char* op;
-	char* idf;
+	expression* exp;
 
 public:
-	output(char* _op, char* _idf);
+	output(char* _op, expression* exp);
 
 	void execute() override;
 
@@ -205,8 +236,7 @@ public:
 
 	void execute() override
 	{
-		
-		//TODO;
+		std::cin >> MEM[NameToAddress(varName)];
 	}
 };
 // this should happen within preprocessor, because that its "execute()" is meaningless;
@@ -238,8 +268,9 @@ class varDecl : public statement
 {
 private:
 	char* var;
+	environment* myEnv;
 public:
-	varDecl(char* c);
+	varDecl(char* c,environment* myEnv_):var(c),myEnv(myEnv_){}
 	~varDecl() = default;
 
 	void execute() override;
@@ -282,31 +313,9 @@ private:
 public:
 	ifStatement(expression* _cond, block* _block, block* ifB, block* elseB) :cond(_cond), myBlock(_block), ifBlock(ifB), elseBlock(elseB)
 	{
-		
 	}
 
-	void execute() override
-	{//TODO
-		block* dest = nullptr;
-		cond->evaluate_compiler(0);
-		if (MEM[0])//??
-		{
-			dest = ifBlock;
-		}
-		else
-		{
-			dest = elseBlock;
-		}
-
-		if (dest != nullptr)
-		{
-			processor.push_JmpDest(dest);
-			processor.push_RtnDest(myBlock);
-			processor.push_RtnPos(myBlock->getCurPos());
-			processor.jump();
-		}
-		
-	}
+	void execute() override;
 	~ifStatement() {}
 };
 
@@ -322,7 +331,7 @@ public:
 		processor.jump();
 	}
 };
-
+// useless
 class condJumpStatement :public statement
 {
 private:
@@ -344,13 +353,31 @@ public:
 class returnStatement:public statement
 {
 private:
+	bool isWhileVersion;
+	expression* cond;
 public:
-	returnStatement() = default;
+	returnStatement() { isWhileVersion = false; cond = nullptr; }
+	returnStatement(expression* cd) :cond(cd) { isWhileVersion = true; }
 	~returnStatement() = default;
 
 	void execute() override
 	{
-		processor.Return();
+		if(isWhileVersion)
+		{
+			cond->evaluate_compiler(0);
+			if (MEM[0])
+			{
+				processor.Return_While();
+			}
+			else
+			{
+				processor.Return();
+			}
+		}
+		else
+		{
+			processor.Return();
+		}
 	}
 };
 
@@ -364,17 +391,8 @@ public:
 	whileStatement(expression* _cond,block* myB, block* wb) :cond(_cond),myBlock(myB), whileBlock(wb) {}
 	~whileStatement() {}
 
-	void execute() override
-	{
-		cond->evaluate_compiler(0);
-		if (MEM[0])
-		{
-			processor.push_JmpDest(whileBlock);
-			processor.push_RtnDest(myBlock);
-			processor.push_RtnPos(myBlock->getCurPos()-1);
-			processor.jump();
-		}
-	}
+	void execute() override;
+	
 
 };
 // derived class of class statement, containing "seq" to point at the other type of statement;

@@ -11,12 +11,32 @@ extern bool anotationModeOn;
 extern bool lineCounterModeOn;
 extern bool compileModeOn;
 
-
-inline int GlobalNameToAddress(char* c)
+int _nameToAddress(environment* env, char* c)
 {
-	std::string name = c;
-	return varToAddress[name];
+	if (env->isGlobalEnv())
+	{
+		std::string name = c;
+		return varToAddress[name];
+	}
+	else
+	{
+		if (env->KeyValueFound(c))
+		{
+			return env->readAddr(c);
+		}
+		else
+		{
+			return _nameToAddress(env->getFEnv(), c);
+		}
+	}
 }
+
+inline int NameToAddress(char* c)
+{
+	return _nameToAddress(processor.getCurEnv(),c);
+}
+
+
 
 
 assignment::assignment(char* _idf, char* _op, expression* _exp)
@@ -26,82 +46,33 @@ assignment::assignment(char* _idf, char* _op, expression* _exp)
 void assignment::execute()
 {
 	exp->evaluate_compiler(0);
-	MEM[GlobalNameToAddress(idf)] = MEM[0];
+	MEM[NameToAddress(idf)] = MEM[0];
 	
 	//return assignValueToIdf(idf,exp->evaluate());
 }
 
-output::output(char* _op, char* _idf)
-	:op(_op), idf(_idf)
+output::output(char* _op, expression* exp_)
+	:op(_op), exp(exp_)
 {}
 
 void output::execute()
 {
+	exp->evaluate_compiler(0);
 	if(compileModeOn)
 	{
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 50 << " " << 0 << " " << " " << " " << " "; //TODO £º allocate memory for variable x, don't use the memory 0;
+		std::cout << 50 << " " << MEM[0] << " " << " " << " " << " ";
 		if (anotationModeOn) std::cout << "// ...";
 		std::cout << std::endl;
 	}
-	
-
-	std::cout << MEM[GlobalNameToAddress(idf)] << std::endl;
+	std::cout << MEM[0] << std::endl; 
 	
 }
 
 
 seqStatement::seqStatement(Lexer* lexer)
 {
-	for(Token* tk_1 = lexer->getToken(); 
-		!(tk_1->getType() == Operator && strcmp(tk_1->getOp(), "EOF") == 0); 
-		tk_1 = lexer->getToken())
-	{
-		// We treat "Output" as a special kind of KeyWord;
-		if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "Output") == 0 || strcmp(tk_1->getIdf(), "output") == 0))
-		{
-			
-			Token* tk_2 = lexer->getToken();
-			statement* ptr = new output{ tk_1->getIdf(),tk_2->getIdf() };
-			seq.push_back(ptr);
-
-			tk_1 = lexer->getToken();
-			if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), ";") == 0)
-			{}
-			else
-			{
-				std::cerr << "(Generate Output Statement ERROR) Expected ; but receive " << tk_1->getOp() << " instead" << std::endl;
-			}
-		}
-		else
-		{
-			Token* tk_2 = lexer->getToken();
-			if(tk_2->getType()== Operator && strcmp(tk_2->getOp(),"=")==0)
-			{
-				statement* ptr = new assignment{tk_1->getIdf(),tk_2->getOp(),parseExpression(lexer)};
-				seq.push_back(ptr);
-
-				{
-					tk_1 = lexer->getToken();
-					if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), ";") == 0)
-					{
-					}
-					else
-					{
-						std::cerr << "(Generate Output Statement ERROR) Expected ; but receive " << tk_1->getOp() << " instead" << std::endl;
-					}
-				}
-			}
-			else
-			{
-				std::cerr << "(Generate Assignment Statement ERROR) Expected = but receive ";
-				if (tk_2->getType() == Operator) { std::cout << tk_2->getOp(); }
-				if (tk_2->getType() == Integer) { std::cout << tk_2->getInt(); }
-				if (tk_2->getType() == Identifier) { std::cout << tk_2->getIdf(); }
-				std::cout << " instead" << std::endl;
-			}
-		}
-	}
+	
 }
 
 
@@ -123,14 +94,12 @@ seqStatement::~seqStatement()
 
 
 
-varDecl::varDecl(char* c)
-{
-	var = c;
-}
-
 void varDecl::execute()
 {
 	std::string name = var;
-	varToAddress[name] = 101 + global_var_cnt;
-	global_var_cnt++;
+	if(myEnv->isGlobalEnv())
+	{
+		varToAddress[name] = 101 + global_var_cnt;
+		global_var_cnt++;
+	}
 }

@@ -24,6 +24,7 @@ int main()
 		seqStatement main = seqStatement{ &obj };
 		main.execute();
 		*/
+		
 		processor.execute();
 	}
 	else
