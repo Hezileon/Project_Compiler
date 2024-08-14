@@ -3,16 +3,31 @@
 #include "../inc/compiler.h"
 extern int MEM[500];
 extern int LC;
+
+std::map<std::string, int> varToAddress;
+extern int global_var_cnt = 0;
+
 extern bool anotationModeOn;
 extern bool lineCounterModeOn;
+extern bool compileModeOn;
+
+
+inline int GlobalNameToAddress(char* c)
+{
+	std::string name = c;
+	return varToAddress[name];
+}
+
+
 assignment::assignment(char* _idf, char* _op, expression* _exp)
 	: idf(_idf),op(_op),exp(_exp)
 {}
 
-int assignment::execute()
+void assignment::execute()
 {
 	exp->evaluate_compiler(0);
-	return assignValueToIdf(idf,MEM[0]);
+	MEM[GlobalNameToAddress(idf)] = MEM[0];
+	
 	//return assignValueToIdf(idf,exp->evaluate());
 }
 
@@ -20,16 +35,19 @@ output::output(char* _op, char* _idf)
 	:op(_op), idf(_idf)
 {}
 
-int output::execute()
+void output::execute()
 {
-	if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-	std::cout << 50 << " " << 0 << " " << " " << " " << " "; //TODO £º allocate memory for variable x, don't use the memory 0;
-	if (anotationModeOn) std::cout << "// ...";
-	std::cout << std::endl;
+	if(compileModeOn)
+	{
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 50 << " " << 0 << " " << " " << " " << " "; //TODO £º allocate memory for variable x, don't use the memory 0;
+		if (anotationModeOn) std::cout << "// ...";
+		std::cout << std::endl;
+	}
+	
 
-
-	std::cout << findIdfValue(idf) << std::endl;
-	return findIdfValue(idf);
+	std::cout << MEM[GlobalNameToAddress(idf)] << std::endl;
+	
 }
 
 
@@ -87,20 +105,32 @@ seqStatement::seqStatement(Lexer* lexer)
 }
 
 
-int seqStatement::execute()
+void seqStatement::execute()
 {
 	for(statement* p:seq)
 	{
 		p->execute();
 	}
-	return 0;
+	
 }
-
-
 seqStatement::~seqStatement()
 {
 	for (statement* p : seq)
 	{
 		delete p;
 	}
+}
+
+
+
+varDecl::varDecl(char* c)
+{
+	var = c;
+}
+
+void varDecl::execute()
+{
+	std::string name = var;
+	varToAddress[name] = 101 + global_var_cnt;
+	global_var_cnt++;
 }

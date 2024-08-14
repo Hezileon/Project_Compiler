@@ -130,7 +130,7 @@
     <ClInclude Include="inc\compiler.h" />
     <ClInclude Include="inc\Lexer.h" />
     <ClInclude Include="inc\Expression.h" />
-    <ClInclude Include="inc\preprocesser.h" />
+    <ClInclude Include="inc\preprocessor.h" />
     <ClInclude Include="inc\Statement.h" />
     <ClInclude Include="inc\virtual_computer_advanced.h" />
   </ItemGroup>
@@ -139,7 +139,7 @@
     <ClCompile Include="src\Expression.cpp" />
     <ClCompile Include="src\Lexer.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\preprocesser.cpp" />
+    <ClCompile Include="src\preprocessor.cpp" />
     <ClCompile Include="src\Statement.cpp" />
     <ClCompile Include="src\virtual_computer_advanced.cpp" />
   </ItemGroup>

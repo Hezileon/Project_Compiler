@@ -30,7 +30,7 @@
     <ClInclude Include="inc\compiler.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="inc\preprocesser.h">
+    <ClInclude Include="inc\preprocessor.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -53,7 +53,7 @@
     <ClCompile Include="src\compiler.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="src\preprocesser.cpp">
+    <ClCompile Include="src\preprocessor.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
