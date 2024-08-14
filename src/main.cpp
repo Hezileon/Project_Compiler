@@ -26,6 +26,8 @@ int main()
 		*/
 		
 		processor.execute();
+
+
 	}
 	else
 	{

@@ -546,7 +546,7 @@ expression* parseExpression1(Lexer* lexer)
 		|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), "==") == 0 || strcmp(tk_next->getOp(), "<") == 0 
 		|| strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ")") == 0
 		|| strcmp(tk_next->getOp(), "&&") == 0 || strcmp(tk_next->getOp(), "||") == 0 || strcmp(tk_next->getOp(), "{") == 0
-		|| strcmp(tk_next->getOp(), "}") == 0))
+		|| strcmp(tk_next->getOp(), "}")==0 || strcmp(tk_next->getOp(), "," )== 0) )
 	{
 		
 		lexer->rollBack();
@@ -612,7 +612,7 @@ expression* parseExpression2(Lexer* lexer)
 			|| strcmp(tk_next->getOp(), "(") == 0 || strcmp(tk_next->getOp(), ">") == 0 || strcmp(tk_next->getOp(), "<") == 0
 			|| strcmp(tk_next->getOp(), "<=") == 0 || strcmp(tk_next->getOp(), ">=") == 0 || strcmp(tk_next->getOp(), "==") == 0
 			|| strcmp(tk_next->getOp(), "&&") == 0 || strcmp(tk_next->getOp(), "||") == 0 || strcmp(tk_next->getOp(), "{") == 0 
-			|| strcmp(tk_next->getOp(), "}") == 0))
+			|| strcmp(tk_next->getOp(), "}") == 0 || strcmp(tk_next->getOp(), ",") == 0))
 		{
 			lexer->rollBack();
 		}

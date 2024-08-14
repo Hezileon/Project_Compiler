@@ -15,14 +15,18 @@ class ifStatement;
 class functionCall;
 
 
-inline void eolCheck(Lexer* lexer,Token* tk_1) 
+inline void eolCheck(Lexer* lexer,Token* tk_2) 
 {
-	if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), ";") == 0)
+	if (tk_2->getType() == Operator && strcmp(tk_2->getOp(), ";") == 0)
 	{
 	}
 	else
 	{
-		std::cerr << "(Generate Output Statement ERROR) Expected ; but receive " << tk_1->getOp() << " instead" << std::endl;
+		std::cerr << "(Generate Output Statement ERROR) Expected ; but receive "  ;
+		if (tk_2->getType() == Operator) { std::cout << tk_2->getOp(); }
+		if (tk_2->getType() == Integer) { std::cout << tk_2->getInt(); }
+		if (tk_2->getType() == Identifier) { std::cout << tk_2->getIdf(); }
+		std::cout << " instead" << std::endl;
 	}
 }
 inline bool quitBlockCheck(Lexer* lexer)
@@ -40,6 +44,25 @@ inline bool quitBlockCheck(Lexer* lexer)
 	}
 }
 
+/*
+ * Norm: check the ; and the end of block;
+ *			tk_1 = lexer->getToken();
+			eolCheck(lexer, tk_1);
+			if (quitBlockCheck(lexer)) {
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
+				this->pushStatement(rtn);
+				break;
+			}
+ *
+ */
 
 block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 {
@@ -105,24 +128,22 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 			else { std::cout << "Expected '(' right after function name but receive something else: ..." << std::endl; }
 			tk_3 = lexer->getToken();Token* tk_4 = lexer->getToken();
 			environment* funcEnv = new environment(myEnv);
+			// func( int x1, int x2, int x3){...}     or func() {}
 			while (tk_3->getType() != Operator)
 			{
 				ptr->createPara(tk_4->getIdf());
-				funcEnv->createVar(tk_4->getIdf());
+				funcEnv->createVar(tk_4->getIdf()); // NOTE That the parameters of a function is the first batch of variables that are stored in a environment;
 				lexer->getToken(); // take in ",";
 				tk_3 = lexer->getToken(); tk_4 = lexer->getToken();
 			}
-
-			
+			lexer->rollBack();
 			myEnv->createFunc(tk_2->getIdf(), ptr->getPSize());
 			// def func(){} therefore tk_4 should be {
-
 			block* funcBlock = new block(lexer, funcEnv);
 			myEnv->updateDest(tk_2->getIdf(), ptr->getPSize(), funcBlock);
 
 			statement* ptr2 = ptr;
 			this->pushStatement(ptr2);
-
 			if (quitBlockCheck(lexer)) {
 				statement* rtn = nullptr;
 				if (myEnv->ifIsWhileBlock())
@@ -227,6 +248,7 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 			}
 			statement* ptr = new whileStatement(cond,this ,whileB);
 			this->pushStatement(ptr);
+
 			if (quitBlockCheck(lexer)) {
 				statement* rtn = nullptr;
 				if (myEnv->ifIsWhileBlock())
@@ -243,25 +265,72 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 		}
 		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "return") == 0 || strcmp(tk_1->getIdf(), "Return") == 0))
 		{
+			expression* exp = parseExpression(lexer);
+			statement* ptr = new returnValueStatement(exp);
+			this->pushStatement(ptr);
 
+			tk_1 = lexer->getToken();
+			eolCheck(lexer, tk_1);
+			if (quitBlockCheck(lexer)) {
+				statement* rtn = nullptr;
+				if (myEnv->ifIsWhileBlock())
+				{
+					rtn = new returnStatement(myEnv->getCond());
+				}
+				else
+				{
+					rtn = new returnStatement();
+				}
+				this->pushStatement(rtn);
+				break;
+			}
 		}
+		// assignment
 		else if (tk_1->getType() == Identifier)
 		{
 			Token* tk_2 = lexer->getToken();
 			if (tk_2->getType() == Operator && strcmp(tk_2->getOp(), "=") == 0)
 			{
-				statement* ptr = new assignment{ tk_1->getIdf(),tk_2->getOp(),parseExpression(lexer) };
-				this->pushStatement(ptr);
-
+				Token* tk_3 = lexer->getToken();
+				if(tk_3->getType()==Identifier && myEnv->isFuncCall(tk_3->getIdf()))
 				{
-					tk_1 = lexer->getToken();
-					if (tk_1->getType() == Operator && strcmp(tk_1->getOp(), ";") == 0)
+					//func(1,2,3); func:tk_3 func();
+					lexer->getToken();
+					Token* leftBrancketTest = lexer->getToken();
+					if(leftBrancketTest->getType()==Operator && (strcmp(leftBrancketTest->getOp(), ")") == 0))
 					{
+						// we leave ; untouched
+						functionCall* ptr = new functionCall(tk_3->getIdf(), 0, this);
+						this->pushStatement(ptr);
 					}
 					else
 					{
-						std::cerr << "(Generate Output Statement ERROR) Expected ; but receive " << tk_1->getOp() << " instead" << std::endl;
+						lexer->rollBack();
+						std::vector<expression*> para;
+						expression* exp = parseExpression(lexer); // Am i making things much complicated then i can handle?
+						Token* comma = lexer->getToken(); // if it comes to the end, comma contains ")"
+						while (comma->getType() == Operator && (strcmp(comma->getOp(), ",") == 0))
+						{
+							para.push_back(exp);
+							exp = parseExpression(lexer); comma = lexer->getToken();
+						}
+						para.push_back(exp);
+						
+						functionCall* ptr_call = new functionCall(tk_3->getIdf(),para.size(),this);
+						for(expression* exp : para)
+						{
+							ptr_call->addParms(exp);
+						}
+						this->pushStatement(ptr_call);
 					}
+					statement* ptr = new assignment{ tk_1->getIdf(),tk_2->getOp(),nullptr};
+					this->pushStatement(ptr);
+				}
+				else
+				{
+					lexer->rollBack();
+					statement* ptr = new assignment{ tk_1->getIdf(),tk_2->getOp(),parseExpression(lexer) };
+					this->pushStatement(ptr);
 				}
 			}
 			else
@@ -272,6 +341,9 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 				if (tk_2->getType() == Identifier) { std::cout << tk_2->getIdf(); }
 				std::cout << " instead" << std::endl;
 			}
+
+			tk_1 = lexer->getToken();
+			eolCheck(lexer, tk_1);
 			if (quitBlockCheck(lexer)) {
 				statement* rtn = nullptr;
 				if (myEnv->ifIsWhileBlock())
@@ -325,10 +397,6 @@ void ifStatement::execute()
 		processor.push_RtnDest(myBlock);
 		processor.push_RtnPos(myBlock->getCurPos());
 
-		int offset = dest->getMyEnv()->getVarCnt();
-		MEM[MEM[200] + 1] = offset;
-		MEM[200] = MEM[200] + offset;
-
 		processor.jump();
 	}
 
@@ -342,10 +410,6 @@ void whileStatement::execute()
 		processor.push_JmpDest(whileBlock);
 		processor.push_RtnDest(myBlock);
 		processor.push_RtnPos(myBlock->getCurPos());
-
-		int offset = whileBlock->getMyEnv()->getVarCnt();
-		MEM[MEM[200] + 1] = offset;
-		MEM[200] = MEM[200] + offset;
 
 		processor.jump();
 	}

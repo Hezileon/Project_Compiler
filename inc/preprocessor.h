@@ -59,6 +59,101 @@ public:
 	}
 	void pushStatement(statement* s) { stm.push_back(s); }
 };
+class environment
+{
+private:
+	environment* f_env;
+	bool isWhileBlock;
+	expression* cond;
+	int varCnt;
+
+	int offsetAllo;
+
+	std::vector<char* > varTbl_c;
+	std::vector<std::string> varTbl;
+	std::vector<std::string> funcTbl;
+	std::map<std::string, int> Value;
+	std::map<std::string, block*> Dest;
+
+public:
+	environment(environment* fE) : f_env(fE), isWhileBlock(false), cond(nullptr) { offsetAllo = 0; }
+	environment(environment* fE, expression* cd) : f_env(fE), isWhileBlock(true), cond(cd) { offsetAllo = 0; }
+	~environment() {}
+
+	// use this when we are preprocessing the code, not when executing. And plz make sure you use the member function;
+	void createVar(char* c)
+	{
+		varTbl_c.push_back(c);
+		std::string var = c; if (!Value.count(var)) { varTbl.push_back(var); Value[var] = offsetAllo++; varCnt++; }
+	}
+	void updateValue(char* c, int value)
+	{
+		MEM[NameToAddress(c)] = value;
+	}
+	void createFunc(char* c, int psize)
+	{
+		std::string shortName = c;
+		std::string func = funcName_generate(c, psize);
+		if (!Dest.count(func)) { funcTbl.push_back(shortName); Dest[func] = nullptr; }
+	}
+	void updateDest(char* c, int psize, block* dest) {
+		std::string func = funcName_generate(c, psize); Dest[func] = dest;
+	}
+	char* getVarTbl(int i) { return varTbl_c[i]; }
+	bool KeyValueFound(char* c)
+	{
+		std::string var = c;
+		return Value.count(var);
+	} // TODO-1 realize The search order of multiple env; -> look into expression
+	int readValue(char* c) {
+		std::string var = c;
+		if (Value.count(var)) { return MEM[MEM[200]-Value[var]]; }
+	}
+	int readAddr(char* c)
+	{
+		std::string var = c;
+		if (Value.count(var)) { return MEM[200]-Value[var]; }
+	}
+	block* readDest(char* c, int pSize)
+	{
+		std::string func = funcName_generate(c, pSize); if (Dest.count(func)) { return Dest[func]; }
+		else { std::cout << "Key value doesn't exist;" << std::endl; return nullptr; }
+	}
+	block* findFuncDest(char* c, int psize)
+	{
+		std::string func = funcName_generate(c, psize);
+		block* rtn = nullptr;
+		if (Dest.count(func) == 0) { if (f_env != nullptr) rtn = f_env->findFuncDest(c, psize); }
+		else { rtn = Dest[func]; }
+		return rtn;
+	}
+	bool isFuncCall(char* c)
+	{
+		std::string shortName = c;
+		if (f_env == nullptr)
+		{
+			for (std::string n : funcTbl)
+			{
+				if (n == shortName) { return true; }
+			}
+			return false;
+		}
+		else
+		{
+			for (std::string n : funcTbl)
+			{
+				if (n == shortName) { return true; }
+			}
+			return f_env->isFuncCall(c);
+		}
+	}
+	bool ifIsWhileBlock() { return isWhileBlock; }
+	expression* getCond() { return cond; }
+	int getVarCnt() { return varCnt; }
+	bool isGlobalEnv() { return f_env == nullptr; }
+	environment* getFEnv() { return f_env; }
+
+};
 
 class preprocessor
 {
@@ -88,13 +183,51 @@ public:
 	void jump()
 	{
 		curBlock = jmpDest_s.top();
+		curEnv = curBlock->getMyEnv();
 		nextPos = 0;
+
+		int offset = curBlock->getMyEnv()->getVarCnt()+1;
+		MEM[MEM[200] + 1] = MEM[200];
+		MEM[200] = MEM[200] + offset;
+	}
+
+	void jump_para(std::vector<expression*> parms)
+	{
+		std::vector<int> p_answer;
+		// use the parameters to calculate the answer and save them
+		for(int i = 0 ;i < parms.size();i++ )
+		{	
+			parms[i]->evaluate_compiler(0);
+			p_answer.push_back(MEM[0]);
+		}
+
+
+
+		curBlock = jmpDest_s.top();
+		curEnv = curBlock->getMyEnv();
+		nextPos = 0;
+
+		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
+		MEM[MEM[200] + 1] = MEM[200];
+		MEM[200] = MEM[200] + offset;
+
+		for (int i = 0; i < parms.size(); i++)
+		{
+			char* var_c = curEnv->getVarTbl(i);// bind value to variables -> get the name of the variables;
+
+			MEM[NameToAddress(var_c)] = p_answer[i]; // notice that the expression should be calculated before entering the block,
+													// while the variable should be assigned after entering the block;
+		}
 	}
 	void Return()
 	{
-		curBlock = rtnDest_s.top();
-		nextPos = rtnPos_s.top();
+		int offset = curBlock->getMyEnv()->getVarCnt()+1;
+		MEM[200] = MEM[MEM[200] - offset+1];
 
+		curBlock = rtnDest_s.top();
+		curEnv = curBlock->getMyEnv();
+		nextPos = rtnPos_s.top();
+		
 		jmpDest_s.pop();
 		rtnDest_s.pop();
 		rtnPos_s.pop();
@@ -125,76 +258,6 @@ public:
 
 extern preprocessor processor;
 
-class environment
-{
-private:
-	environment* f_env;
-	bool isWhileBlock;
-	expression* cond;
-	int varCnt;
-
-	int offsetAllo;
-
-	std::vector<std::string> varTbl;
-	std::vector<std::string> funcTbl;
-	std::map<std::string, int> Value; 
-	std::map<std::string, block*> Dest;
-
-public:
-	environment(environment* fE) : f_env(fE), isWhileBlock(false), cond(nullptr) { offsetAllo = 0; }
-	environment(environment* fE,expression* cd) : f_env(fE),isWhileBlock(true),cond(cd) { offsetAllo = 0; }
-	~environment(){}
-
-	// use this when we are preprocessing the code, not when executing. And plz make sure you use the member function;
-	void createVar(char* c)
-	{
-		std::string var = c; if (!Value.count(var)) { varTbl.push_back(var); Value[var] = offsetAllo++; varCnt++; }
-	}
-	void updateValue(char* c, int value)
-	{
-		std::string var = c; MEM[Value[var]] = value;
-	}
-	void createFunc(char* c, int psize)
-	{
-		std::string func = funcName_generate(c, psize);
-		if (!Dest.count(func)) { funcTbl.push_back(func); Dest[func] = nullptr; }
-	}
-	void updateDest(char* c, int psize, block* dest) {
-		std::string func = funcName_generate(c, psize); Dest[func] = dest; }
-	bool KeyValueFound(char* c)
-	{
-		std::string var = c;
-		return Value.count(var);
-	} // TODO-1 realize The search order of multiple env; -> look into expression
-	int readValue(char* c) {
-		std::string var = c;
-		if (Value.count(var)) { return MEM[Value[var]]; }
-	}
-	int readAddr(char* c)
-	{
-		std::string var = c;
-		if (Value.count(var)) { return Value[var]; }
-	}
-	block* readDest(char* c, int pSize)
-	{
-		std::string func = funcName_generate(c, pSize); if (Dest.count(func)) { return Dest[func]; }
-		else { std::cout << "Key value doesn't exist;" << std::endl; return nullptr; }
-	}
-	block* findFuncDest(char* c, int psize)
-	{
-		std::string func = funcName_generate(c, psize);
-		block* rtn = nullptr;
-		if (Dest.count(func) == 0) { if (f_env != nullptr) rtn = f_env->findFuncDest(c, psize); }
-		else { rtn = Dest[func]; }
-		return rtn;
-	}
-	bool ifIsWhileBlock() { return isWhileBlock; }
-	expression* getCond() { return cond; }
-	int getVarCnt() { return varCnt; }
-	bool isGlobalEnv() { return f_env == nullptr;}
-	environment* getFEnv() { return f_env; }
-	
-};
 
 
 
@@ -254,7 +317,7 @@ public:
 
 	void execute() override
 	{
-		 //TODO
+		
 	}
 
 	~functionDef() {}
@@ -281,11 +344,11 @@ class functionCall : public statement
 private:
 	char* funcName;
 	int pSize;
-	std::vector<int> parms;
+	std::vector<expression*> parms;
 	block* myBlock;
 public:
-	functionCall(char* name, int _psize, block* _block) :funcName(name), pSize(_psize), myBlock(_block) {}
-	void addParms(int v) { parms.push_back(v); }
+	functionCall(char* name, int _psize, block* myBlock_) :funcName(name), pSize(_psize), myBlock(myBlock_) {}
+	void addParms(expression* exp_) { parms.push_back(exp_); }
 
 	void execute()
 	{
@@ -295,7 +358,8 @@ public:
 			processor.push_JmpDest(dest);
 			processor.push_RtnDest(myBlock);
 			processor.push_RtnPos(myBlock->readPos(this));
-			processor.jump();
+			
+			processor.jump_para(parms);
 		}
 
 	}
@@ -378,6 +442,24 @@ public:
 		{
 			processor.Return();
 		}
+	}
+};
+class returnValueStatement :public statement
+{
+private:
+	expression* exp;
+
+public:
+	returnValueStatement(expression* exp_):exp (exp_) {  }
+	~returnValueStatement() = default;
+
+	void execute() override
+	{
+		exp->evaluate_compiler(0);
+
+		MEM[100] = MEM[0];
+
+		processor.Return();
 	}
 };
 

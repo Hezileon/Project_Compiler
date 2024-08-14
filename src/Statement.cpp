@@ -45,8 +45,15 @@ assignment::assignment(char* _idf, char* _op, expression* _exp)
 
 void assignment::execute()
 {
-	exp->evaluate_compiler(0);
-	MEM[NameToAddress(idf)] = MEM[0];
+	if(exp == nullptr)
+	{
+		MEM[NameToAddress(idf)] = MEM[100];
+	}
+	else
+	{
+		exp->evaluate_compiler(0);
+		MEM[NameToAddress(idf)] = MEM[0];
+	}
 	
 	//return assignValueToIdf(idf,exp->evaluate());
 }
