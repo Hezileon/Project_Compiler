@@ -9,13 +9,18 @@
 #include "../inc/Expression.h"
 
 
+
+
+extern int stmCnt ;
+extern bool showStatementModeOn;
+
 class environment;
 class block;
 class statement
 {
-
 public:
 	virtual void execute() = 0;
+	virtual void show_yourself() = 0;
 };
 
 inline std::string funcName_generate(char* c, int psize) {
@@ -67,6 +72,7 @@ private:
 	expression* cond;
 	int varCnt;
 
+	int stk_addr;
 	int offsetAllo;
 
 	std::vector<char* > varTbl_c;
@@ -90,15 +96,8 @@ public:
 	{
 		MEM[NameToAddress(c)] = value;
 	}
-	void createFunc(char* c, int psize)
-	{
-		std::string shortName = c;
-		std::string func = funcName_generate(c, psize);
-		if (!Dest.count(func)) { funcTbl.push_back(shortName); Dest[func] = nullptr; }
-	}
-	void updateDest(char* c, int psize, block* dest) {
-		std::string func = funcName_generate(c, psize); Dest[func] = dest;
-	}
+	void createFunc(char* c, int psize);
+	void updateDest(char* c, int psize, block* dest);
 	char* getVarTbl(int i) { return varTbl_c[i]; }
 	bool KeyValueFound(char* c)
 	{
@@ -107,12 +106,12 @@ public:
 	}
 	int readValue(char* c) {
 		std::string var = c;
-		if (Value.count(var)) { return MEM[MEM[200]-Value[var]]; }
+		if (Value.count(var)) { return MEM[stk_addr-Value[var]]; }
 	}
 	int readAddr(char* c)
 	{
 		std::string var = c;
-		if (Value.count(var)) { return MEM[200]-Value[var]; }
+		if (Value.count(var)) { return stk_addr-Value[var]; }
 		else { std::cerr << "readAddr_error, no key value found"<<std::endl; }
 	}
 	block* readDest(char* c, int pSize)
@@ -153,9 +152,8 @@ public:
 	int getVarCnt() { return varCnt; }
 	bool isGlobalEnv() { return f_env == nullptr; }
 	environment* getFEnv() { return f_env; }
-
+	void setStackAddr(int s) { stk_addr = s; }
 };
-
 class preprocessor
 {
 private:
@@ -169,8 +167,11 @@ private:
 	int nextPos;
 	statement* nextStatement;
 
-
-
+	bool statusOperating;
+	block* MainBlock;
+	// 1. processor.execute() -> modification!
+	// 2. setMainBlock? happens at?
+	// 3. if no MainBlock found, set MainBlock to curBlock
 
 public:
 
@@ -181,6 +182,18 @@ public:
 	void pop_RtnDest(block* x) { rtnDest_s.pop(); }
 	void pop_RtnSos(int x) { rtnPos_s.pop(); }
 
+	void main_block_init()
+	{
+		curBlock = MainBlock;
+		curEnv = curBlock->getMyEnv();
+		nextPos = 0;
+
+		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
+		MEM[MEM[200] + 1] = MEM[200];
+		MEM[200] = MEM[200] + offset;
+		curEnv->setStackAddr(MEM[200]);
+	}
+
 	void jump()
 	{
 		curBlock = jmpDest_s.top();
@@ -190,6 +203,7 @@ public:
 		int offset = curBlock->getMyEnv()->getVarCnt()+1;
 		MEM[MEM[200] + 1] = MEM[200];
 		MEM[200] = MEM[200] + offset;
+		curEnv->setStackAddr(MEM[200]);
 	}
 
 	void jump_para(std::vector<expression*> parms)
@@ -202,8 +216,6 @@ public:
 			p_answer.push_back(MEM[0]);
 		}
 
-
-
 		curBlock = jmpDest_s.top();
 		curEnv = curBlock->getMyEnv();
 		nextPos = 0;
@@ -211,6 +223,7 @@ public:
 		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
 		MEM[MEM[200] + 1] = MEM[200];
 		MEM[200] = MEM[200] + offset;
+		curEnv->setStackAddr(MEM[200]);
 
 		for (int i = 0; i < parms.size(); i++)
 		{
@@ -225,13 +238,23 @@ public:
 		int offset = curBlock->getMyEnv()->getVarCnt()+1;
 		MEM[200] = MEM[MEM[200] - offset+1];
 
-		curBlock = rtnDest_s.top();
-		curEnv = curBlock->getMyEnv();
-		nextPos = rtnPos_s.top();
+		if(rtnPos_s.empty())
+		{
+			// TEST MODE
+			std::cout << "end of programme;" << std::endl;
+			statusOperating = false;
+		}
+		else
+		{
+			curBlock = rtnDest_s.top();
+			curEnv = curBlock->getMyEnv();
+			nextPos = rtnPos_s.top();
 		
-		jmpDest_s.pop();
-		rtnDest_s.pop();
-		rtnPos_s.pop();
+			jmpDest_s.pop();
+			rtnDest_s.pop();
+			rtnPos_s.pop();
+		}
+		
 	}
 	void Return_While()
 	{
@@ -240,18 +263,30 @@ public:
 	void execute()
 	{
 		// MAIN_PROCESS_LOOP
+		statusOperating = true;
 		MEM[200] = 200;
 
+		if(MainBlock != nullptr)
+		{
+			main_block_init();
+		}
 		curBlock->setPos(nextPos++);
 		statement* ptr = curBlock->getNextStatement();
-		while(ptr != nullptr)
+		while(ptr != nullptr && statusOperating)
 		{
+			if (showStatementModeOn) { ptr->show_yourself(); }
 			ptr->execute();
 			curBlock->setPos(nextPos++); ptr = curBlock->getNextStatement();
 		}
 	}
-
 	environment* getCurEnv() { return curEnv; }
+
+
+	void setMainBlock(block* mainBlock_)
+	{
+		MainBlock = mainBlock_;
+	}
+	block* getMainBlock() { return MainBlock; }
 
 	preprocessor(Lexer* lexer);
 	~preprocessor(){}
@@ -272,7 +307,7 @@ public:
 	assignment(char* _idf, char* _op, expression* _exp);
 
 	void execute() override;
-
+	void show_yourself() override { std::cout << stmCnt++ << ": assignment" << std::endl; }
 	~assignment();
 };
 
@@ -286,7 +321,7 @@ public:
 	output(char* _op, expression* exp);
 
 	void execute() override;
-
+	void show_yourself() override { std::cout << stmCnt++ << ": output" << std::endl; }
 	~output();
 };
 
@@ -295,13 +330,14 @@ class input : public statement
 private:
 	char* varName;
 public:
-	input(char* n) :varName(n) {}
+	input(char* n) :varName(n) { std::cout << stmCnt++ << ": input" << std::endl; }
 	~input() {}
 
 	void execute() override
 	{
 		std::cin >> MEM[NameToAddress(varName)];
 	}
+	void show_yourself() override{}
 };
 // this should happen within preprocessor, because that its "execute()" is meaningless;
 
@@ -320,7 +356,7 @@ public:
 	{
 		
 	}
-
+	void show_yourself() override { std::cout << stmCnt++ << ": function Def" << std::endl; }
 	~functionDef() {}
 };
 
@@ -334,10 +370,11 @@ private:
 	char* var;
 	environment* myEnv;
 public:
-	varDecl(char* c,environment* myEnv_):var(c),myEnv(myEnv_){}
+	varDecl(char* c, environment* myEnv_);
 	~varDecl() = default;
 
 	void execute() override;
+	void show_yourself() override { std::cout << stmCnt++ << ": variable declaration" << std::endl; }
 };
 
 class functionCall : public statement
@@ -353,6 +390,7 @@ public:
 
 	void execute()
 	{
+		
 		block* dest = myBlock->getMyEnv()->findFuncDest(funcName, pSize);
 		if (dest != nullptr)
 		{
@@ -364,6 +402,7 @@ public:
 		}
 
 	}
+	void show_yourself() override { std::cout << stmCnt++ << ": function call" << std::endl; }
 	~functionCall() {}
 };
 
@@ -381,38 +420,8 @@ public:
 	}
 
 	void execute() override;
+	void show_yourself() override { std::cout << stmCnt++ << ": if statement" << std::endl; }
 	~ifStatement() {}
-};
-
-class jumpStatement:public statement
-{
-private:
-public:
-	jumpStatement() = default;
-	~jumpStatement() = default;
-
-	void execute() override
-	{
-		processor.jump();
-	}
-};
-// useless
-class condJumpStatement :public statement
-{
-private:
-	expression* cond;
-public:
-	condJumpStatement(expression* cond):cond(cond){}
-	~condJumpStatement() = default;
-
-	void execute() override
-	{
-		cond->evaluate_compiler(0);
-		if (MEM[0])
-		{
-			processor.jump();
-		}
-	}
 };
 
 class returnStatement:public statement
@@ -443,7 +452,7 @@ public:
 		{
 			processor.Return();
 		}
-	}
+	}void show_yourself() override { std::cout << stmCnt++ << ": return statement ( no rtn value)" << std::endl; }
 };
 class returnValueStatement :public statement
 {
@@ -459,9 +468,9 @@ public:
 		exp->evaluate_compiler(0);
 
 		MEM[100] = MEM[0];
-
 		processor.Return();
 	}
+	void show_yourself() override { std::cout << stmCnt++ << ": return with value statement" << std::endl; }
 };
 
 class whileStatement :public statement
@@ -475,7 +484,7 @@ public:
 	~whileStatement() {}
 
 	void execute() override;
-	
+	void show_yourself() override { std::cout << stmCnt++ << ": while statement" << std::endl; }
 
 };
 // derived class of class statement, containing "seq" to point at the other type of statement;
@@ -491,6 +500,7 @@ public:
 	void addStatementToTail(statement* newStatement) {} // modify
 
 	void execute() override;
+	void show_yourself() override {}
 	~seqStatement();
 };
 

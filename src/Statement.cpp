@@ -4,8 +4,8 @@
 extern int MEM[500];
 extern int LC;
 
-std::map<std::string, int> varToAddress;
-extern int global_var_cnt = 0;
+extern std::map<std::string, int> varToAddress;
+extern int global_var_cnt;
 
 extern bool anotationModeOn;
 extern bool lineCounterModeOn;
@@ -121,12 +121,19 @@ seqStatement::~seqStatement()
 
 
 
+
+varDecl::varDecl(char* c, environment* myEnv_):var(c),myEnv(myEnv_)
+{
+	
+	std::string name = var;
+	if (myEnv->isGlobalEnv())
+	{
+			varToAddress[name] = 101 + global_var_cnt;
+			global_var_cnt++;
+	}
+}
+
 void varDecl::execute()
 {
-	std::string name = var;
-	if(myEnv->isGlobalEnv())
-	{
-		varToAddress[name] = 101 + global_var_cnt;
-		global_var_cnt++;
-	}
+
 }

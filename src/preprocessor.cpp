@@ -117,7 +117,7 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 				break;
 			}
 		}
-		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "Def") == 0 || strcmp(tk_1->getIdf(), "DEF") == 0))
+		else if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "def") == 0 || strcmp(tk_1->getIdf(), "DEF") == 0 || strcmp(tk_1->getIdf(), "Def") == 0))
 		{
 			
 			Token* tk_2 = lexer->getToken(); // tk_2 is function_name;
@@ -307,7 +307,7 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 					{
 						lexer->rollBack();
 						std::vector<expression*> para;
-						expression* exp = parseExpression(lexer); // Am i making things much complicated then i can handle?
+						expression* exp = parseExpression(lexer); // Am i making things much complicated than i can handle?
 						Token* comma = lexer->getToken(); // if it comes to the end, comma contains ")"
 						while (comma->getType() == Operator && (strcmp(comma->getOp(), ",") == 0))
 						{
@@ -371,6 +371,7 @@ block::block(Lexer* lexer,environment* myEnvironment_):myEnv(myEnvironment_)
 
 preprocessor::preprocessor(Lexer* lexer)
 {
+	MainBlock = nullptr;
 	// initialization:
 	curEnv = new environment( nullptr); // a.k.a global environment
 	curBlock = new block(lexer, curEnv);
@@ -415,3 +416,23 @@ void whileStatement::execute()
 	}
 }
 
+
+void environment::createFunc(char* c, int psize)
+{
+	std::string shortName = c;
+	std::string func = funcName_generate(c, psize);
+	if (!Dest.count(func)) { funcTbl.push_back(shortName); Dest[func] = nullptr; }
+}
+
+void environment::updateDest(char* c, int psize, block* dest)
+{
+	std::string shortName = c;
+	std::string func = funcName_generate(c, psize); Dest[func] = dest;
+
+	
+	std::string name = "main";
+	if (shortName == name)
+	{
+		processor.setMainBlock(dest);
+	}
+}

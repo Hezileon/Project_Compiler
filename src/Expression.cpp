@@ -25,11 +25,11 @@
  *
  */
 
-extern bool anotationModeOn = false;
-extern bool lineCounterModeOn = false;
-extern bool compileModeOn = true;
+extern bool anotationModeOn ;
+extern bool lineCounterModeOn ;
+extern bool compileModeOn;
 
-extern bool output_banned = true;
+extern bool output_banned ;
 extern int LC;
 // TODO: refine the order of "!";
 
