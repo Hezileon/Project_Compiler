@@ -104,7 +104,7 @@ public:
 	{
 		std::string var = c;
 		return Value.count(var);
-	} // TODO-1 realize The search order of multiple env; -> look into expression
+	}
 	int readValue(char* c) {
 		std::string var = c;
 		if (Value.count(var)) { return MEM[MEM[200]-Value[var]]; }
@@ -113,6 +113,7 @@ public:
 	{
 		std::string var = c;
 		if (Value.count(var)) { return MEM[200]-Value[var]; }
+		else { std::cerr << "readAddr_error, no key value found"<<std::endl; }
 	}
 	block* readDest(char* c, int pSize)
 	{

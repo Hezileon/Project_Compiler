@@ -9,6 +9,7 @@ std::vector<Cmd*> computer;
 
 void Cmd::execute()
 {
+    std::cout << "HIHIHI" << std::endl;// TODO-DELETE
     if (isControlOperator(op))
     {
         if (op == 20)
@@ -89,10 +90,11 @@ void Cmd::execute()
 
 void Virtual_Computer_Advanced_Main()
 {
-
+std::cout << "Hihi" << std::endl;
     int op, x, y, z;
     while (std::cin >> op)
     {
+        
         if (op == -1) { break; } // cin negative op to stop the loop;
         // identify the type of this op
         if (isCommand(op))
@@ -105,6 +107,7 @@ void Virtual_Computer_Advanced_Main()
             computer.push_back(p);
         }
     }
+    std::cout << "HIHIHI" << std::endl;
     pc = 0;
     while (pc >= 0 && pc < computer.size())
     {

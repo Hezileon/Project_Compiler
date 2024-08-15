@@ -14,25 +14,14 @@ extern preprocessor processor = preprocessor{ &obj };
 
 int main()
 {
-	// bool compilerModeOn = false;
-	bool compilerModeOn = true;
-	if(compilerModeOn)
-	{
-		/*
+		
+	/*
 		Lexer obj;// the constructor of Lexer will do the job of input;
 		//obj._Test_Lexer_Check();
 		seqStatement main = seqStatement{ &obj };
 		main.execute();
 		*/
-		
-		processor.execute();
-
-
-	}
-	else
-	{
-		Virtual_Computer_Advanced_Main();
-	}
+	processor.execute();
 	return 0;
 	
 

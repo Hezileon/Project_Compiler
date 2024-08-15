@@ -47,11 +47,28 @@ void assignment::execute()
 {
 	if(exp == nullptr)
 	{
+		if (compileModeOn)
+		{
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 3 << " " << 100 << " " << " " << " " << NameToAddress(idf);
+			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：函数调用赋值  ";
+			std::cout << std::endl;
+		}
+
 		MEM[NameToAddress(idf)] = MEM[100];
 	}
 	else
 	{
 		exp->evaluate_compiler(0);
+
+		if (compileModeOn)
+		{
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 3 << " " << 0 << " " << " " << " " << NameToAddress(idf);
+			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：表达式计算后对变量赋值  ";
+			std::cout << std::endl;
+		}
+
 		MEM[NameToAddress(idf)] = MEM[0];
 	}
 	
@@ -62,18 +79,21 @@ output::output(char* _op, expression* exp_)
 	:op(_op), exp(exp_)
 {}
 
+extern bool output_banned;
 void output::execute()
 {
 	exp->evaluate_compiler(0);
 	if(compileModeOn)
-	{
+	{ // TODO-4 目前output只能处理 expression作为输出对象，可否尝试拓展至函数返回值？
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 50 << " " << MEM[0] << " " << " " << " " << " ";
-		if (anotationModeOn) std::cout << "// ...";
+		std::cout << 50 << " " << 0 << " " << " " << " " << " ";
+		if (anotationModeOn) std::cout << "// output MEM[0] ";
 		std::cout << std::endl;
 	}
-	std::cout << MEM[0] << std::endl; 
-	
+	if(!output_banned)
+	{
+		std::cout << MEM[0] << std::endl; 
+	}
 }
 
 

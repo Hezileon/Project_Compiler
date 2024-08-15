@@ -24,9 +24,6 @@
     <ClInclude Include="inc\Statement.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="inc\virtual_computer_advanced.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="inc\compiler.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -45,9 +42,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\Statement.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="src\virtual_computer_advanced.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\compiler.cpp">

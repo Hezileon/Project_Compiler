@@ -27,7 +27,9 @@
 
 extern bool anotationModeOn = false;
 extern bool lineCounterModeOn = false;
-extern bool compileModeOn = false;
+extern bool compileModeOn = true;
+
+extern bool output_banned = true;
 extern int LC;
 // TODO: refine the order of "!";
 
@@ -110,11 +112,12 @@ void expressionBasic::evaluate_compiler(int pos)
 	if (basicType == basicType_idf)
 	{
 		// MARK -> illegal behavior (findIdfValue)
-		if(compileModeOn)
+
+		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << "0 " << findIdfValue(var.Idf) << " " << " " << " " << pos;
-			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+			std::cout << 3 << " " << NameToAddress(var.Idf) << " " << " " << " " <<pos ;
+			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：读取变量值至MEM[z]  ";
 			std::cout << std::endl;
 		}
 		
@@ -126,7 +129,7 @@ void expressionBasic::evaluate_compiler(int pos)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 			std::cout << "0 " << var.Int << " " << " " << " " << pos;
-			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[z] = x,处理Basic Expression";
 			std::cout << std::endl;
 		}
 		
@@ -140,7 +143,7 @@ void expressionBasic::evaluate_compiler(int pos)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 			std::cout << "0 " << MEM[posExp] << " " << " " << " " << pos;
-			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[pos] = i,处理Basic Expression";
+			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[z] = x,处理Basic Expression";
 			std::cout << std::endl;
 		}
 		
