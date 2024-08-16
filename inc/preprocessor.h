@@ -128,7 +128,7 @@ public:
 	}
 	void updateValue(char* c, int value)
 	{
-		MEM[NameToAddress(c, TODO)] = value;
+		MEM[NameToAddress(c, this)] = value;
 	}
 	void createFunc(char* c, int psize);
 	void updateDest(char* c, int psize, block* dest);

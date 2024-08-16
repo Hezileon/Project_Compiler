@@ -495,7 +495,7 @@ void preprocessor::jump_para(std::vector<expression*> parms)
 	{
 		char* var_c = curEnv->getVarTbl(i);// bind value to variables -> get the name of the variables;
 
-		MEM[NameToAddress(var_c, TODO)] = p_answer[i]; // notice that the expression should be calculated before entering the block,
+		MEM[NameToAddress(var_c, curEnv)] = p_answer[i]; // notice that the expression should be calculated before entering the block,
 		// while the variable should be assigned after entering the block;
 	}
 }
