@@ -15,7 +15,7 @@ extern bool anotationModeOn = false;
 extern bool lineCounterModeOn = false;
 extern bool compileModeOn = false;
 
-extern bool showStatementModeOn = true;
+extern bool showStatementModeOn = false;
 extern bool output_banned = false;
 extern int LC;
 extern int stmCnt = 0;
@@ -33,6 +33,7 @@ int main()
 		main.execute();
 		*/
 	processor.execute();
+	
 	return 0;
 	
 

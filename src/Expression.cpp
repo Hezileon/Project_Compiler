@@ -16,13 +16,13 @@
 
 
 /*
- *
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << asm_num << " " << x << " " << y << " " << z;
-		if (anotationModeOn) std::cout << "// ...";
-		std::cout << std::endl;
- *
- *
+ *		if (compileModeOn)
+		{
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << asm_num << " " << x << " " << y << " " << z;
+			if (anotationModeOn) std::cout << "// ...";
+			std::cout << std::endl;
+		}
  */
 
 extern bool anotationModeOn ;
@@ -116,12 +116,12 @@ void expressionBasic::evaluate_compiler(int pos)
 		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 3 << " " << NameToAddress(var.Idf) << " " << " " << " " <<pos ;
+			std::cout << 3 << " " << NameToAddress(var.Idf, TODO) << " " << " " << " " <<pos ;
 			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：读取变量值至MEM[z]  ";
 			std::cout << std::endl;
 		}
 		
-		MEM[pos] = MEM[NameToAddress(var.Idf)];
+		MEM[pos] = MEM[NameToAddress(var.Idf, TODO)];
 	}
 	else if (basicType == basicType_int)
 	{

@@ -2,25 +2,36 @@
 #ifndef PREPROCESSER_H_
 #define PREPROCESSER_H_
 
+
+/*
+ *		if (compileModeOn)
+		{
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << asm_num << " " << x << " " << y << " " << z;
+			if (anotationModeOn) std::cout << "// ...";
+			std::cout << std::endl;
+		}
+ */
 #include <stack>
 
 #include "compiler.h"
-#include "Statement.h"
 #include "../inc/Expression.h"
+#include <cstdlib>
 
-
-
+std::string Label_Allocator();
 
 extern int stmCnt ;
 extern bool showStatementModeOn;
 
 class environment;
 class block;
+
 class statement
 {
 public:
 	virtual void execute() = 0;
 	virtual void show_yourself() = 0;
+	//virtual int getLineCnt() = 0;
 };
 
 inline std::string funcName_generate(char* c, int psize) {
@@ -28,18 +39,31 @@ inline std::string funcName_generate(char* c, int psize) {
 	for (int i = 0; i < psize; i++) func = func + "i";
 	return func;
 }
-inline int NameToAddress(char* c);
+inline int NameToAddress(char* c, environment* var_env);
 class block
 {
 private:
 	std::vector<statement*> stm;
-	std::vector<block*> jumpTo; //?
 	environment* myEnv;
 	int pos;
-	// int Tag;
+	bool isFuncBlock;
+	int parmSize;
+	std::string myLabel;
+	std::string rtnLabel;
+	std::string skipLabel;
+	// std::map<statement*, std::string> rtnLabel;// TODO-2
 
+	// TODO-LIST
+
+	// 0. label allocator;
+	// 1. write generateCode();(generate the block of function, this code is a label version of code;)
+	// 2. write code for all kind of statement and check their correctness; ---> the checking correctness part i would do it mannually
+	// 3. modify processor.execute() to call generateCode();
+	// 
+	// 5.
+	// 6. 
 public:
-	block(Lexer*,environment*);
+	block(Lexer*,environment*,bool);
 	~block() = default;
 
 	statement* getNextStatement()
@@ -63,6 +87,16 @@ public:
 		return pos;
 	}
 	void pushStatement(statement* s) { stm.push_back(s); }
+
+	void generateCode();
+	std::string	getLabel_start() { return myLabel; }
+	std::string getLabel_rtn() { return rtnLabel; }
+	std::string getLabel_skip() { return skipLabel; }
+
+	void setParmSize(int size_) { parmSize = size_; }
+	// plz make sure the curEnv and curBlock are correct before you call this function;
+	void executeAllStatement() { for (statement* s : stm) { s->execute(); } }
+
 };
 class environment
 {
@@ -94,7 +128,7 @@ public:
 	}
 	void updateValue(char* c, int value)
 	{
-		MEM[NameToAddress(c)] = value;
+		MEM[NameToAddress(c, TODO)] = value;
 	}
 	void createFunc(char* c, int psize);
 	void updateDest(char* c, int psize, block* dest);
@@ -114,6 +148,8 @@ public:
 		if (Value.count(var)) { return stk_addr-Value[var]; }
 		else { std::cerr << "readAddr_error, no key value found"<<std::endl; }
 	}
+	void setStackAddr(int s) { stk_addr = s; }
+
 	block* readDest(char* c, int pSize)
 	{
 		std::string func = funcName_generate(c, pSize); if (Dest.count(func)) { return Dest[func]; }
@@ -152,7 +188,10 @@ public:
 	int getVarCnt() { return varCnt; }
 	bool isGlobalEnv() { return f_env == nullptr; }
 	environment* getFEnv() { return f_env; }
-	void setStackAddr(int s) { stk_addr = s; }
+	
+
+	std::vector<std::string> getGlobalFuncDef() { return funcTbl; }
+	block* getFuncBlock(std::string name) { return Dest[name]; }
 };
 class preprocessor
 {
@@ -181,7 +220,8 @@ public:
 	void pop_JmpDest(block* x) { jmpDest_s.pop(); }
 	void pop_RtnDest(block* x) { rtnDest_s.pop(); }
 	void pop_RtnSos(int x) { rtnPos_s.pop(); }
-
+	block* read_JumpDest_Top() { return jmpDest_s.top(); }
+	block* read_ReturnDest_Top() { return rtnDest_s.top(); }
 	void main_block_init()
 	{
 		curBlock = MainBlock;
@@ -194,91 +234,11 @@ public:
 		curEnv->setStackAddr(MEM[200]);
 	}
 
-	void jump()
-	{
-		curBlock = jmpDest_s.top();
-		curEnv = curBlock->getMyEnv();
-		nextPos = 0;
-
-		int offset = curBlock->getMyEnv()->getVarCnt()+1;
-		MEM[MEM[200] + 1] = MEM[200];
-		MEM[200] = MEM[200] + offset;
-		curEnv->setStackAddr(MEM[200]);
-	}
-
-	void jump_para(std::vector<expression*> parms)
-	{
-		std::vector<int> p_answer;
-		// use the parameters to calculate the answer and save them
-		for(int i = 0 ;i < parms.size();i++ )
-		{	
-			parms[i]->evaluate_compiler(0);
-			p_answer.push_back(MEM[0]);
-		}
-
-		curBlock = jmpDest_s.top();
-		curEnv = curBlock->getMyEnv();
-		nextPos = 0;
-
-		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
-		MEM[MEM[200] + 1] = MEM[200];
-		MEM[200] = MEM[200] + offset;
-		curEnv->setStackAddr(MEM[200]);
-
-		for (int i = 0; i < parms.size(); i++)
-		{
-			char* var_c = curEnv->getVarTbl(i);// bind value to variables -> get the name of the variables;
-
-			MEM[NameToAddress(var_c)] = p_answer[i]; // notice that the expression should be calculated before entering the block,
-													// while the variable should be assigned after entering the block;
-		}
-	}
-	void Return()
-	{
-		int offset = curBlock->getMyEnv()->getVarCnt()+1;
-		MEM[200] = MEM[MEM[200] - offset+1];
-
-		if(rtnPos_s.empty())
-		{
-			// TEST MODE
-			std::cout << "end of programme;" << std::endl;
-			statusOperating = false;
-		}
-		else
-		{
-			curBlock = rtnDest_s.top();
-			curEnv = curBlock->getMyEnv();
-			nextPos = rtnPos_s.top();
-		
-			jmpDest_s.pop();
-			rtnDest_s.pop();
-			rtnPos_s.pop();
-		}
-		
-	}
-	void Return_While()
-	{
-		nextPos = 0;
-	}
-	void execute()
-	{
-		// MAIN_PROCESS_LOOP
-		statusOperating = true;
-		MEM[200] = 200;
-
-		if(MainBlock != nullptr)
-		{
-			main_block_init();
-		}
-		curBlock->setPos(nextPos++);
-		statement* ptr = curBlock->getNextStatement();
-		while(ptr != nullptr && statusOperating)
-		{
-			if (showStatementModeOn) { ptr->show_yourself(); }
-			ptr->execute();
-			curBlock->setPos(nextPos++); ptr = curBlock->getNextStatement();
-		}
-	}
+	void jump();
+	void jump_para(std::vector<expression*> parms);
+	void Return();
+	void Return_While();
+	void execute();
 	environment* getCurEnv() { return curEnv; }
 
 
@@ -287,15 +247,16 @@ public:
 		MainBlock = mainBlock_;
 	}
 	block* getMainBlock() { return MainBlock; }
-
+	block* getCurBlock() { return curBlock; }
 	preprocessor(Lexer* lexer);
 	~preprocessor(){}
+
+
+	void setCurBlockandEnv(block* curB_) { curBlock = curB_; curEnv = curB_->getMyEnv(); }
+	void setNextPos(int i) { nextPos = i; }
 };
 
 extern preprocessor processor;
-
-
-
 
 class assignment : public statement
 {
@@ -303,12 +264,14 @@ private:
 	char* idf;
 	char* op;
 	expression* exp;
+	block* myBlock;
 public:
-	assignment(char* _idf, char* _op, expression* _exp);
+	assignment(char* _idf, char* _op, expression* _exp,block* myBlock_);
 
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": assignment" << std::endl; }
 	~assignment();
+	// int getLineCnt() override{}
 };
 
 class output : public statement
@@ -316,9 +279,9 @@ class output : public statement
 private:
 	char* op;
 	expression* exp;
-
+	block* myBlock;
 public:
-	output(char* _op, expression* exp);
+	output(char* _op, expression* exp,block* myB_);
 
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": output" << std::endl; }
@@ -329,15 +292,15 @@ class input : public statement
 {
 private:
 	char* varName;
+	block* myBlock;
 public:
-	input(char* n) :varName(n) { std::cout << stmCnt++ << ": input" << std::endl; }
+	input(char* n,block* myBlock_) :varName(n),myBlock(myBlock_) { std::cout << stmCnt++ << ": input" << std::endl; }
 	~input() {}
 
-	void execute() override
-	{
-		std::cin >> MEM[NameToAddress(varName)];
-	}
-	void show_yourself() override{}
+	void execute() override;
+	
+	void show_yourself() override{ std::cout << stmCnt++ << ": input" << std::endl; }
+	//virtual int getLineCnt() override{}
 };
 // this should happen within preprocessor, because that its "execute()" is meaningless;
 
@@ -354,10 +317,11 @@ public:
 
 	void execute() override
 	{
-		
+		// QUESTION-1
 	}
 	void show_yourself() override { std::cout << stmCnt++ << ": function Def" << std::endl; }
 	~functionDef() {}
+	//virtual int getLineCnt() override{}
 };
 
 
@@ -375,6 +339,7 @@ public:
 
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": variable declaration" << std::endl; }
+	// virtual int getLineCnt() override{}
 };
 
 class functionCall : public statement
@@ -388,22 +353,11 @@ public:
 	functionCall(char* name, int _psize, block* myBlock_) :funcName(name), pSize(_psize), myBlock(myBlock_) {}
 	void addParms(expression* exp_) { parms.push_back(exp_); }
 
-	void execute()
-	{
-		
-		block* dest = myBlock->getMyEnv()->findFuncDest(funcName, pSize);
-		if (dest != nullptr)
-		{
-			processor.push_JmpDest(dest);
-			processor.push_RtnDest(myBlock);
-			processor.push_RtnPos(myBlock->readPos(this));
-			
-			processor.jump_para(parms);
-		}
-
-	}
+	void execute();
+	
 	void show_yourself() override { std::cout << stmCnt++ << ": function call" << std::endl; }
 	~functionCall() {}
+	//virtual int getLineCnt() override{}
 };
 
 class ifStatement : public statement
@@ -422,6 +376,7 @@ public:
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": if statement" << std::endl; }
 	~ifStatement() {}
+	//virtual int getLineCnt() override{}
 };
 
 class returnStatement:public statement
@@ -429,50 +384,30 @@ class returnStatement:public statement
 private:
 	bool isWhileVersion;
 	expression* cond;
+	block* myBlock;
 public:
-	returnStatement() { isWhileVersion = false; cond = nullptr; }
-	returnStatement(expression* cd) :cond(cd) { isWhileVersion = true; }
+	returnStatement(block* myBlock_):myBlock(myBlock) { isWhileVersion = false; cond = nullptr; }
+	returnStatement(expression* cd,block* myBlock_) :cond(cd),myBlock(myBlock_) { isWhileVersion = true; }
 	~returnStatement() = default;
 
-	void execute() override
-	{
-		if(isWhileVersion)
-		{
-			cond->evaluate_compiler(0);
-			if (MEM[0])
-			{
-				processor.Return_While();
-			}
-			else
-			{
-				processor.Return();
-			}
-		}
-		else
-		{
-			processor.Return();
-		}
-	}void show_yourself() override { std::cout << stmCnt++ << ": return statement ( no rtn value)" << std::endl; }
+	void execute() override;
+	void show_yourself() override { std::cout << stmCnt++ << ": return statement ( no rtn value)" << std::endl; }
 };
+
 class returnValueStatement :public statement
 {
 private:
 	expression* exp;
-
+	block* myBlock;
 public:
-	returnValueStatement(expression* exp_):exp (exp_) {  }
+	returnValueStatement(expression* exp_,block* myBlock_):exp (exp_),myBlock(myBlock_) {  }
 	~returnValueStatement() = default;
 
-	void execute() override
-	{
-		exp->evaluate_compiler(0);
-
-		MEM[100] = MEM[0];
-		processor.Return();
-	}
+	void execute() override;
+	
 	void show_yourself() override { std::cout << stmCnt++ << ": return with value statement" << std::endl; }
 };
-
+// TODO-2
 class whileStatement :public statement
 {
 private:
