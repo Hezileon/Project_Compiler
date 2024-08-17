@@ -22,29 +22,32 @@ std::string Label_Allocator()
 	return  label;
 }
 
-int _nameToAddress(environment* env, char* c)
+int _nameToAddress(environment* env, char* c, int stk_addr)
 {
 	if (env->isGlobalEnv())
 	{
-		std::string name = c;
-		return varToAddress[name];
+		int offset = env->readAddrOffset(c);
+		return 101 + offset;
 	}
 	else
 	{
 		if (env->KeyValueFound(c))
 		{
-			return env->readAddr(c);
+			return stk_addr - env->readAddrOffset(c);
 		}
 		else
 		{
-			return _nameToAddress(env->getFEnv(), c);
+			int varCnt = env->getVarCnt();
+			int offset = varCnt + 1;
+			int stk_next = MEM[stk_addr - offset + 1];
+			return _nameToAddress(env->getFEnv(), c, stk_next);
 		}
 	}
 }
 
 inline int NameToAddress(char* c, environment* var_env)
 {
-	return _nameToAddress(var_env,c);
+	return _nameToAddress(var_env,c, MEM[200]);
 }
 
 
@@ -70,7 +73,7 @@ void assignment::execute()
 	}
 	else
 	{
-		exp->evaluate_compiler(0);
+		exp->evaluate_compiler(0, myBlock->getMyEnv());
 
 		if (compileModeOn)
 		{
@@ -92,7 +95,7 @@ output::output(char* _op, expression* exp_,block* myBlock_)
 extern bool output_banned;
 void output::execute()
 {
-	exp->evaluate_compiler(0);
+	exp->evaluate_compiler(0, myBlock->getMyEnv());
 	if(compileModeOn)
 	{ // TODO-4 目前output只能处理 expression作为输出对象，可否尝试拓展至函数返回值？
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
@@ -142,13 +145,8 @@ seqStatement::~seqStatement()
 
 varDecl::varDecl(char* c, environment* myEnv_):var(c),myEnv(myEnv_)
 {
-	
+	myEnv->createVar(var);
 	std::string name = var;
-	if (myEnv->isGlobalEnv())
-	{
-			varToAddress[name] = 101 + global_var_cnt;
-			global_var_cnt++;
-	}
 }
 
 void varDecl::execute()
@@ -176,7 +174,7 @@ void functionCall::execute()
 		// use the parameters to calculate the answer and save them
 		for (int i = 0; i < parms.size(); i++)
 		{
-			parms[i]->evaluate_compiler(0);
+			parms[i]->evaluate_compiler(0,myBlock->getMyEnv());
 
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 			std::cout << 3 << " " << 0 << " " << " " << " " << 99-i;
@@ -239,7 +237,7 @@ void ifStatement::execute()
 	//TODO:
 	if(compileModeOn)
 	{
-		cond->evaluate_compiler(0);
+		cond->evaluate_compiler(0, myBlock->getMyEnv());
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 		std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << ifBlock->getLabel_start();
@@ -341,7 +339,7 @@ void ifStatement::execute()
 	}
 	else
 	{
-		cond->evaluate_compiler(0);
+		cond->evaluate_compiler(0, myBlock->getMyEnv());
 		if (MEM[0])//??
 		{
 			dest = ifBlock;
@@ -367,7 +365,7 @@ void whileStatement::execute()
 {
 	if (compileModeOn)
 	{
-		cond->evaluate_compiler(0);
+		cond->evaluate_compiler(0, myBlock->getMyEnv());
 		// this is wrong;
 
 
@@ -412,7 +410,7 @@ void whileStatement::execute()
 	}
 	else
 	{
-		cond->evaluate_compiler(0);
+		cond->evaluate_compiler(0, myBlock->getMyEnv());
 		if (MEM[0])
 		{
 			processor.push_JmpDest(whileBlock);

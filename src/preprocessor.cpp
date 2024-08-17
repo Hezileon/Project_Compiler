@@ -134,7 +134,6 @@ block::block(Lexer* lexer,environment* myEnvironment_,bool isFuncBlock_):myEnv(m
 			Token* tk_2 = lexer->getToken();
 			statement* ptr = new varDecl{ tk_2->getIdf(),myEnv };
 			this->pushStatement(ptr);
-			myEnv->createVar(tk_2->getIdf());
 			tk_1 = lexer->getToken();
 			eolCheck(lexer, tk_1);
 			if (quitBlockCheck(lexer)) {
@@ -471,7 +470,7 @@ void preprocessor::jump_para(std::vector<expression*> parms)
 	// use the parameters to calculate the answer and save them
 	for (int i = 0; i < parms.size(); i++)
 	{
-		parms[i]->evaluate_compiler(0);
+		parms[i]->evaluate_compiler(0,curEnv);
 		p_answer.push_back(MEM[0]);
 	}
 
@@ -506,7 +505,7 @@ void returnStatement::execute()
 	{
 		if(compileModeOn)
 		{
-			cond->evaluate_compiler(0);
+			cond->evaluate_compiler(0,myBlock->getMyEnv());
 
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 			std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << myBlock->getLabel_start();
@@ -520,7 +519,7 @@ void returnStatement::execute()
 		}
 		else
 		{
-			cond->evaluate_compiler(0);
+			cond->evaluate_compiler(0,myBlock->getMyEnv());
 			if (MEM[0])
 			{
 				processor.Return_While();
@@ -552,7 +551,7 @@ void returnValueStatement::execute()
 {
 	if (compileModeOn)
 	{
-		exp->evaluate_compiler(0);
+		exp->evaluate_compiler(0,myBlock->getMyEnv());
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 		std::cout << 3 << " " << 0 << " " << " " << " " << 100;
@@ -568,7 +567,7 @@ void returnValueStatement::execute()
 
 	}
 	else {
-		exp->evaluate_compiler(0);
+		exp->evaluate_compiler(0, myBlock->getMyEnv());
 
 		MEM[100] = MEM[0];
 		processor.Return();

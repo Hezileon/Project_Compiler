@@ -112,7 +112,7 @@ private:
 	std::vector<char* > varTbl_c;
 	std::vector<std::string> varTbl;
 	std::vector<std::string> funcTbl;
-	std::map<std::string, int> Value;
+	std::map<std::string, int> varOffset;
 	std::map<std::string, block*> Dest;
 
 public:
@@ -124,7 +124,7 @@ public:
 	void createVar(char* c)
 	{
 		varTbl_c.push_back(c);
-		std::string var = c; if (!Value.count(var)) { varTbl.push_back(var); Value[var] = offsetAllo++; varCnt++; }
+		std::string var = c; if (!varOffset.count(var)) { varTbl.push_back(var); varOffset[var] = offsetAllo++; varCnt++; }
 	}
 	void updateValue(char* c, int value)
 	{
@@ -136,16 +136,16 @@ public:
 	bool KeyValueFound(char* c)
 	{
 		std::string var = c;
-		return Value.count(var);
+		return varOffset.count(var);
 	}
 	int readValue(char* c) {
 		std::string var = c;
-		if (Value.count(var)) { return MEM[stk_addr-Value[var]]; }
+		if (varOffset.count(var)) { return MEM[stk_addr-varOffset[var]]; }
 	}
-	int readAddr(char* c)
+	int readAddrOffset(char* c)
 	{
 		std::string var = c;
-		if (Value.count(var)) { return stk_addr-Value[var]; }
+		if (varOffset.count(var)) { return varOffset[var]; }
 		else { std::cerr << "readAddr_error, no key value found"<<std::endl; }
 	}
 	void setStackAddr(int s) { stk_addr = s; }
@@ -188,7 +188,6 @@ public:
 	int getVarCnt() { return varCnt; }
 	bool isGlobalEnv() { return f_env == nullptr; }
 	environment* getFEnv() { return f_env; }
-	
 
 	std::vector<std::string> getGlobalFuncDef() { return funcTbl; }
 	block* getFuncBlock(std::string name) { return Dest[name]; }

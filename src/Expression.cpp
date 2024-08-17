@@ -107,7 +107,7 @@ int expressionBasic::evaluate()
 		return var.exp->evaluate();
 	}
 }
-void expressionBasic::evaluate_compiler(int pos)
+void expressionBasic::evaluate_compiler(int pos,environment* env)
 {
 	if (basicType == basicType_idf)
 	{
@@ -116,12 +116,12 @@ void expressionBasic::evaluate_compiler(int pos)
 		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 3 << " " << NameToAddress(var.Idf, TODO) << " " << " " << " " <<pos ;
+			std::cout << 3 << " " << NameToAddress(var.Idf, env) << " " << " " << " " <<pos ;
 			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：读取变量值至MEM[z]  ";
 			std::cout << std::endl;
 		}
 		
-		MEM[pos] = MEM[NameToAddress(var.Idf, TODO)];
+		MEM[pos] = MEM[NameToAddress(var.Idf, env)];
 	}
 	else if (basicType == basicType_int)
 	{
@@ -138,7 +138,7 @@ void expressionBasic::evaluate_compiler(int pos)
 	else if (basicType == basicType_exp)
 	{
 		int posExp = pos + 1;
-		var.exp->evaluate_compiler(posExp);
+		var.exp->evaluate_compiler(posExp,env);
 		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
@@ -226,21 +226,21 @@ void helper_expBi(char* op, int pos, int posE1, int posE2)
 
 	}
 }
-void expressionBinary::evaluate_compiler(int pos)
+void expressionBinary::evaluate_compiler(int pos,environment* env)
 {
 	int posExp1, posExp2; posExp1 = pos + 1; posExp2 = pos + 2; // calculate posExp1 first, otherwise the already saved MEM[posExp2] will be changed;
 
-	if (strcmp(op, "+") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op, pos, posExp1, posExp2); MEM[pos] = MEM[posExp1]+MEM[posExp2]; }
-	else if (strcmp(op, "-") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]-MEM[posExp2];}
-	else if (strcmp(op, "*") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]*MEM[posExp2];}
-	else if (strcmp(op, "/") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]/MEM[posExp2];}
-	else if (strcmp(op, "==") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]==MEM[posExp2];}
-	else if (strcmp(op, ">=") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>=MEM[posExp2];}
-	else if (strcmp(op, "<=") == 0) { exp_1->evaluate_compiler(posExp1); exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<=MEM[posExp2];}
-	else if (strcmp(op, "<") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<MEM[posExp2];}
-	else if (strcmp(op, ">") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>MEM[posExp2];}
-	else if (strcmp(op, "||") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]||MEM[posExp2];}
-	else if (strcmp(op, "&&") == 0) { exp_1->evaluate_compiler(posExp1);exp_2->evaluate_compiler(posExp2); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]&&MEM[posExp2];}
+	if (strcmp(op, "+") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op, pos, posExp1, posExp2); MEM[pos] = MEM[posExp1]+MEM[posExp2]; }
+	else if (strcmp(op, "-") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]-MEM[posExp2];}
+	else if (strcmp(op, "*") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]*MEM[posExp2];}
+	else if (strcmp(op, "/") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]/MEM[posExp2];}
+	else if (strcmp(op, "==") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]==MEM[posExp2];}
+	else if (strcmp(op, ">=") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>=MEM[posExp2];}
+	else if (strcmp(op, "<=") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<=MEM[posExp2];}
+	else if (strcmp(op, "<") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<MEM[posExp2];}
+	else if (strcmp(op, ">") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>MEM[posExp2];}
+	else if (strcmp(op, "||") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]||MEM[posExp2];}
+	else if (strcmp(op, "&&") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]&&MEM[posExp2];}
 	else { std::cerr << "Unexpected token: " << op << " received in expressionBinary" << std::endl;}
 }
 
@@ -263,7 +263,7 @@ int expressionTernery::evaluate()
 		return exp_2->evaluate();
 	}
 }
-void expressionTernery::evaluate_compiler(int pos)
+void expressionTernery::evaluate_compiler(int pos,environment* env)
 {
 	int exp1_pos = pos+1;
 	int exp_pos = pos+2;
@@ -271,15 +271,15 @@ void expressionTernery::evaluate_compiler(int pos)
 	int nLine2 = exp_2->lineCount_comp();
 	int nLine3 = exp_3->lineCount_comp();
 
-	exp_1->evaluate_compiler(exp1_pos);	
-	exp_2->evaluate_compiler(exp_pos);
+	exp_1->evaluate_compiler(exp1_pos,env);	
+	exp_2->evaluate_compiler(exp_pos,env);
 	if (compileModeOn)
 	{
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 		std::cout << 20 << " " << exp1_pos << " " << " " << " " << LC + nLine3;
 		if (anotationModeOn) std::cout << "// 如果MEM[x]的值非零，跳转到第z条指令继续执行, 即跳过exp_3的计算，避免了exp_2的值被覆盖";
 		std::cout << std::endl;
-		exp_3->evaluate_compiler(exp_pos);
+		exp_3->evaluate_compiler(exp_pos,env);
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 		std::cout << 3 << " " << exp_pos << " " << " " << " " << pos;
@@ -289,7 +289,7 @@ void expressionTernery::evaluate_compiler(int pos)
 	
 	if(!MEM[exp1_pos])
 	{
-		exp_3->evaluate_compiler(exp_pos);
+		exp_3->evaluate_compiler(exp_pos,env);
 	}
 	MEM[pos] = MEM[exp_pos];
 
@@ -317,13 +317,13 @@ int expressionUnary::evaluate()
 		std::cerr << "Expected - in expressionUnary op but receive " << op << " instead"<<std::endl;
 	}
 }
-void expressionUnary::evaluate_compiler(int pos)
+void expressionUnary::evaluate_compiler(int pos,environment* env)
 {
 	
 	int exp_1Pos = pos + 1;
 	if (strcmp(op, "-") == 0)
 	{
-		exp_1->evaluate_compiler(exp_1Pos);
+		exp_1->evaluate_compiler(exp_1Pos,env);
 		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
@@ -342,7 +342,7 @@ void expressionUnary::evaluate_compiler(int pos)
 	}
 	else if (strcmp(op, "!") == 0)
 	{
-		exp_1->evaluate_compiler(exp_1Pos);
+		exp_1->evaluate_compiler(exp_1Pos,env);
 
 		if (compileModeOn)
 		{

@@ -4,6 +4,7 @@
 #include <map>
 
 #include "Lexer.h"
+class environment;
 extern std::map<std::string, int> IdfToValue;
 int findIdfValue(char* str);
 int assignValueToIdf(char* _str, int value);
@@ -55,7 +56,7 @@ class expression
 private:
 public:
 	virtual int evaluate() = 0;
-	virtual void evaluate_compiler(int pos) = 0;
+	virtual void evaluate_compiler(int pos,environment*) = 0;
 	virtual int lineCount_comp() = 0;
 };
 
@@ -69,7 +70,7 @@ public:
 	expressionTernery(expression* _exp_1, expression* _exp_2, expression* _exp_3);
 
 	virtual int evaluate() override;
-	virtual void evaluate_compiler(int pos) override;
+	virtual void evaluate_compiler(int pos,environment*) override;
 	virtual int lineCount_comp() override
 	{
 		return 2+
@@ -89,7 +90,7 @@ public:
 	expressionBinary(expression* _exp_1, expression* _exp_2, char* _op);
 
 	virtual int evaluate() override;
-	virtual void evaluate_compiler(int pos) override;
+	virtual void evaluate_compiler(int pos,environment*) override;
 	virtual int lineCount_comp() override
 	{
 		int sum = exp_1->lineCount_comp() + exp_2->lineCount_comp();
@@ -106,7 +107,7 @@ class expressionUnary : public expression
 public:
 	expressionUnary(expression* _exp_1,char* _op);
 	virtual int evaluate() override;
-	virtual void evaluate_compiler(int pos) override;
+	virtual void evaluate_compiler(int pos,environment*) override;
 	virtual int lineCount_comp() override
 	{
 		if (strcmp(op, "-") == 0) return exp_1->lineCount_comp() + 2;
@@ -139,7 +140,7 @@ public:
 	expressionBasic(int typeNum, Lexer);// if encounter "("
 
 	virtual int evaluate() override;
-	virtual void evaluate_compiler(int pos) override;
+	virtual void evaluate_compiler(int pos,environment*) override;
 	virtual int lineCount_comp() override
 	{
 		return 1;
