@@ -22,32 +22,68 @@ std::string Label_Allocator()
 	return  label;
 }
 
-int _nameToAddress(environment* env, char* c, int stk_addr)
+void _nameToAddress(environment* env, char* c, int pos)
 {
 	if (env->isGlobalEnv())
 	{
 		int offset = env->readAddrOffset(c);
-		return 101 + offset;
+		if(compileModeOn)
+		{
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 0 << " " << 101+offset << " " << " " << " " << pos;
+			if (anotationModeOn) std::cout << "// 常量存储，语义：MEM[z] = x, 储存解析出的addr到MEM[pos]  ";
+			std::cout << std::endl;
+		}
 	}
 	else
 	{
 		if (env->KeyValueFound(c))
 		{
-			return stk_addr - env->readAddrOffset(c);
+			if (compileModeOn)
+			{
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 0 << " " << env->readAddrOffset(c) << " " << " " << " " << pos+1;
+				if (anotationModeOn) std::cout << "// 储存OFFSET到MEM[pos+1] ";
+				std::cout << std::endl;
+
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 5 << " " << 199  << " " << pos+1 << " " << pos;
+				if (anotationModeOn) std::cout << "// 减法实现地址计算，语义：MEM[z] = MEM[200] - offset, 储存解析出的addr到MEM[pos]  ";
+				std::cout << std::endl;
+
+			}
+			
 		}
 		else
 		{
 			int varCnt = env->getVarCnt();
+
 			int offset = varCnt + 1;
-			int stk_next = MEM[stk_addr - offset + 1];
-			return _nameToAddress(env->getFEnv(), c, stk_next);
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 0 << " " << offset << " " << " " << " " << 198;
+			if (anotationModeOn) std::cout << "// 储存offset到MEM[198] ";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 5 << " " << 199 << " " << 198 << " " << 199;
+			if (anotationModeOn) std::cout << "// MEM[199]寻变量指针移动";
+			std::cout << std::endl;
+
+			_nameToAddress(env->getFEnv(), c, pos);
 		}
 	}
 }
 
-inline int NameToAddress(char* c, environment* var_env)
+inline void NameToAddress(char* c, environment* var_env, int pos)
 {
-	return _nameToAddress(var_env,c, MEM[200]);
+	if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+	std::cout << 3 << " " << 200 << " " << " " << " " << 199;
+	if (anotationModeOn) std::cout << "// 储存栈顶到MEM[199] ";
+	std::cout << std::endl;
+
+
+	_nameToAddress(var_env,c, pos);
 }
 
 
@@ -63,13 +99,19 @@ void assignment::execute()
 	{
 		if (compileModeOn)
 		{
+			
+			NameToAddress(idf, myBlock->getMyEnv(),1);
+			// wrong!
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 3 << " " << 100 << " " << " " << " " << NameToAddress(idf, myBlock->getMyEnv());
-			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：函数调用赋值  ";
+			std::cout << 1 << " " << 100 << " " << 0 << " " << 1;
+			if (anotationModeOn) std::cout << "// 数组存储运算符,语义：MEM[0+MEM[1]] = MEM[100],此处用法为：函数调用后对变量赋值  ";
 			std::cout << std::endl;
 		}
-
-		MEM[NameToAddress(idf, myBlock->getMyEnv())] = MEM[100];
+		else
+		{
+			NameToAddress(idf, myBlock->getMyEnv(), 1);
+			MEM[MEM[1]] = MEM[100];
+		}
 	}
 	else
 	{
@@ -77,12 +119,19 @@ void assignment::execute()
 
 		if (compileModeOn)
 		{
+			NameToAddress(idf, myBlock->getMyEnv(),1);
+
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 3 << " " << 0 << " " << " " << " " << NameToAddress(idf, myBlock->getMyEnv());
-			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：表达式计算后对变量赋值  ";
+			std::cout << 1 << " " << 0 << " " << 0 << " " << 1;
+			if (anotationModeOn) std::cout << "// 数组存储运算符,语义：MEM[0+MEM[1]] = MEM[0],此处用法为：表达式计算后对变量赋值  ";
 			std::cout << std::endl;
+			
 		}
-		MEM[NameToAddress(idf, myBlock->getMyEnv())] = MEM[0];
+		else
+		{
+			NameToAddress(idf, myBlock->getMyEnv(), 1);
+			MEM[MEM[1]] = MEM[0];
+		}
 	}
 	
 	//return assignValueToIdf(idf,exp->evaluate());
@@ -103,10 +152,14 @@ void output::execute()
 		if (anotationModeOn) std::cout << "// output MEM[0] ";
 		std::cout << std::endl;
 	}
-	if(!output_banned)
+	else
 	{
-		std::cout << MEM[0] << std::endl; 
+		if(!output_banned)
+		{
+			std::cout << MEM[0] << std::endl; 
+		}
 	}
+	
 }
 
 
@@ -158,12 +211,24 @@ void input::execute()
 {
 	if (compileModeOn)
 	{
+		NameToAddress(varName, myBlock->getMyEnv(), 1);
+
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 60 << " " << NameToAddress(varName, myBlock->getMyEnv()) << " " << " " << " " << " ";
+		std::cout << 60 << " " << 2 << " " << " " << " " << " ";
 		if (anotationModeOn) std::cout << "// 读取一个整数值，并存放到MEM[x]   ";
 		std::cout << std::endl;
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 1 << " " << 2 << " " << 0 << " " << 1;
+		if (anotationModeOn) std::cout << "// 数组存储，MEM[MEM[1]] = MEM[2]  ";
+		std::cout << std::endl;
 	}
-	std::cin >> MEM[NameToAddress(varName, myBlock->getMyEnv())];
+	else
+	{
+		std::cout << "input: ";
+		NameToAddress(varName, myBlock->getMyEnv(), 1);
+		std::cin >> MEM[MEM[1]];
+	}
 }
 
 void functionCall::execute()
@@ -181,7 +246,7 @@ void functionCall::execute()
 			if (anotationModeOn) std::cout << "//MEM[z] = MEM[x] 赋值，存放传递的参数";
 			std::cout << std::endl;
 
-			MEM[99 - i] = MEM[0];
+			// MEM[99 - i] = MEM[0];
 		}
 		//TODO-3 CHECK generateCode是否有接受参数的操作;
 
@@ -205,10 +270,16 @@ void functionCall::execute()
 		if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
 		std::cout << std::endl;
 
+		//MEM[2] = MEM[200]+MEM[1];
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 4 << " " << 200 << " " << 1 << " " << 2;
+		if (anotationModeOn) std::cout << "// MEM[2] = MEM[200] + MEM[1]";
+		std::cout << std::endl;
+
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 2 << " " << 200 << " " << 1 << " " << 200;
-		if (anotationModeOn) std::cout << "// MEM[z] = MEM[x+MEM[y]],stack shift";
+		std::cout << 2 << " " << 1 << " " << 2 << " " << 200;
+		if (anotationModeOn) std::cout << "// MEM[z] = MEM[1+MEM[2]],stack shift";
 		std::cout << std::endl;
 
 		//MEM[200] = MEM[MEM[200] - offset + 1];
@@ -237,105 +308,160 @@ void ifStatement::execute()
 	//TODO:
 	if(compileModeOn)
 	{
-		cond->evaluate_compiler(0, myBlock->getMyEnv());
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << ifBlock->getLabel_start();
-		if (anotationModeOn) std::cout << "// 条件进入if语句";
-		std::cout << std::endl;
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 30 << " " << " " << " " << " " << " " << "goto " << elseBlock->getLabel_start();
-		if (anotationModeOn) std::cout << "// 强制进入else语句";
-		std::cout << std::endl;
-		// ifBlock's generation:
-		/*
-		processor.push_JmpDest(ifBlock);
-		processor.push_RtnDest(myBlock);
-		processor.push_RtnPos(myBlock->getCurPos());
-
-		processor.setCurBlockandEnv(processor.read_JumpDest_Top());
-		processor.setNextPos(0);
-		processor.getCurBlock()->getMyEnv()->setStackAddr(MEM[200]);
-
-		processor.getCurBlock()->executeAllStatement();
-		*/
-
-
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << ifBlock->getLabel_rtn() << ": ";
-		if (anotationModeOn) std::cout << "// return label of IF";
-		std::cout << std::endl;
-
-		// IF's stack operation here // TODO-1
+		if(elseBlock != nullptr)
 		{
-			// stack pop operation:
-			int offset = ifBlock->getMyEnv()->getVarCnt() + 1;
+			cond->evaluate_compiler(0, myBlock->getMyEnv());
 
-			MEM[1] = -offset + 1;
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 0 << " " << -offset << " " << " " << " " << 1;
-			if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
+			std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << ifBlock->getLabel_start();
+			if (anotationModeOn) std::cout << "// 条件进入if语句";
+			std::cout << std::endl;
+			// CHECk
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 30 << " " << " " << " " << " " << " " << "goto " << elseBlock->getLabel_start();
+			if (anotationModeOn) std::cout << "// 强制进入else语句";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << ifBlock->getLabel_rtn();
+			if (anotationModeOn) std::cout << "// return label of IF";
+			std::cout << std::endl;
+
+			// IF's stack operation here // TODO-1
+			{
+				// stack pop operation:
+				int offset = ifBlock->getMyEnv()->getVarCnt() + 1;
+
+				MEM[1] = -offset + 1;
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 0 << " " << -offset << " " << " " << " " << 1;
+				if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
+				std::cout << std::endl;
+
+
+				//MEM[2] = MEM[200]+MEM[1];
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 4 << " " << 200 << " " << 1 << " " << 2;
+				if (anotationModeOn) std::cout << "// MEM[2] = MEM[200] + MEM[1]";
+				std::cout << std::endl;
+
+
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 2 << " " << 1 << " " << 2 << " " << 200;
+				if (anotationModeOn) std::cout << "// MEM[z] = MEM[1+MEM[2]],stack shift";
+				std::cout << std::endl;
+
+				// MEM[200] = MEM[MEM[200] - offset + 1];
+				// stack pop end;
+			}
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 30 << " " << " " << " " << " " << " " << "goto " << ifBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// 强制 跳转到skip label of IF";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << elseBlock->getLabel_rtn();
+			if (anotationModeOn) std::cout << "// return label of ELSE";
+			std::cout << std::endl;
+
+			// ELSE's stack operation here // TODO-1
+			{
+				// stack pop operation:
+				int offset = elseBlock->getMyEnv()->getVarCnt() + 1;
+
+				// MEM[1] = -offset + 1;
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 0 << " " << -offset << " " << " " << " " << 1;
+				if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
+				std::cout << std::endl;
+
+
+				//MEM[2] = MEM[200]+MEM[1];
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 4 << " " << 200 << " " << 1 << " " << 2;
+				if (anotationModeOn) std::cout << "// MEM[2] = MEM[200] + MEM[1]";
+				std::cout << std::endl;
+
+
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 2 << " " << 1 << " " << 2 << " " << 200;
+				if (anotationModeOn) std::cout << "// MEM[z] = MEM[1+MEM[2]],stack shift";
+				std::cout << std::endl;
+
+				// MEM[200] = MEM[MEM[200] - offset + 1];
+				// stack pop end;
+			}
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 30 << " " << " " << " " << " " << " " << "goto " << elseBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// 强制 跳转到skip label of ELSE";
+			std::cout << std::endl;
+
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << ifBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// skip label of IF";
 			std::cout << std::endl;
 
 
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 2 << " " << 200 << " " << 1 << " " << 200;
-			if (anotationModeOn) std::cout << "// MEM[z] = MEM[x+MEM[y]],stack shift";
+			std::cout << elseBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// return label of ELSE";
 			std::cout << std::endl;
 
-			MEM[200] = MEM[MEM[200] - offset + 1];
-			// stack pop end;
 		}
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 30 << " " << " " << " " << " " << " " << "goto " << ifBlock->getLabel_skip();
-		if (anotationModeOn) std::cout << "// 强制 跳转到skip label of IF";
-		std::cout << std::endl;
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << elseBlock->getLabel_rtn() << ": ";
-		if (anotationModeOn) std::cout << "// return label of ELSE";
-		std::cout << std::endl;
-
-		// ELSE's stack operation here // TODO-1
+		else
 		{
-			// stack pop operation:
-			int offset = elseBlock->getMyEnv()->getVarCnt() + 1;
-
-			// MEM[1] = -offset + 1;
-			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 0 << " " << -offset << " " << " " << " " << 1;
-			if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
-			std::cout << std::endl;
-
+			cond->evaluate_compiler(0, myBlock->getMyEnv());
 
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 2 << " " << 200 << " " << 1 << " " << 200;
-			if (anotationModeOn) std::cout << "// MEM[z] = MEM[x+MEM[y]],stack shift";
+			std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << ifBlock->getLabel_start();
+			if (anotationModeOn) std::cout << "// 条件进入if语句";
+			std::cout << std::endl;
+			// CHECk
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << 30 << " " << " " << " " << " " << " " << "goto " << ifBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// 强制进入if语句之后";
 			std::cout << std::endl;
 
-			// MEM[200] = MEM[MEM[200] - offset + 1];
-			// stack pop end;
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << ifBlock->getLabel_rtn();
+			if (anotationModeOn) std::cout << "// return label of IF";
+			std::cout << std::endl;
+
+			// IF's stack operation here // TODO-1
+			{
+				// stack pop operation:
+				int offset = ifBlock->getMyEnv()->getVarCnt() + 1;
+
+				// MEM[1] = -offset + 1;
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 0 << " " << -offset << " " << " " << " " << 1;
+				if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
+				std::cout << std::endl;
+
+
+				//MEM[2] = MEM[200]+MEM[1];
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 4 << " " << 200 << " " << 1 << " " << 2;
+				if (anotationModeOn) std::cout << "// MEM[2] = MEM[200] + MEM[1]";
+				std::cout << std::endl;
+
+
+				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+				std::cout << 2 << " " << 1 << " " << 2 << " " << 200;
+				if (anotationModeOn) std::cout << "// MEM[z] = MEM[1+MEM[2]],stack shift";
+				std::cout << std::endl;
+				// MEM[200] = MEM[MEM[200] - offset + 1];
+				// stack pop end;
+
+
+			}
+			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+			std::cout << ifBlock->getLabel_skip();
+			if (anotationModeOn) std::cout << "// skip label of IF";
+			std::cout << std::endl;
 		}
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 30 << " " << " " << " " << " " << " " << "goto " << elseBlock->getLabel_skip();
-		if (anotationModeOn) std::cout << "// 强制 跳转到skip label of ELSE";
-		std::cout << std::endl;
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << ifBlock->getLabel_skip() << ": ";
-		if (anotationModeOn) std::cout << "// skip label of IF";
-		std::cout << std::endl;
-
-
-		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << elseBlock->getLabel_skip() << ": ";
-		if (anotationModeOn) std::cout << "// return label of ELSE";
-		std::cout << std::endl;
-
 	}
 	else
 	{
@@ -381,7 +507,7 @@ void whileStatement::execute()
 		std::cout << std::endl;
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << whileBlock->getLabel_rtn() << ": ";
+		std::cout << whileBlock->getLabel_rtn();
 		if (anotationModeOn) std::cout << "// return label";
 		std::cout << std::endl;
 
@@ -395,16 +521,24 @@ void whileStatement::execute()
 		std::cout << std::endl;
 
 
+		//MEM[2] = MEM[200]+MEM[1];
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 2 << " " << 200 << " " << 1 << " " << 200;
-		if (anotationModeOn) std::cout << "// MEM[z] = MEM[x+MEM[y]],stack shift";
+		std::cout << 4 << " " << 200 << " " << 1 << " " << 2;
+		if (anotationModeOn) std::cout << "// MEM[2] = MEM[200] + MEM[1]";
 		std::cout << std::endl;
+
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 2 << " " << 1 << " " << 2 << " " << 200;
+		if (anotationModeOn) std::cout << "// MEM[z] = MEM[1+MEM[2]],stack shift";
+		std::cout << std::endl;
+
 
 		// MEM[200] = MEM[MEM[200] - offset + 1];
 		// stack pop end;
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << whileBlock->getLabel_skip() << ": ";
+		std::cout << whileBlock->getLabel_skip() ;
 		if (anotationModeOn) std::cout << "// skip label";
 		std::cout << std::endl;
 	}

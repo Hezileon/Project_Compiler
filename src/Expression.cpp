@@ -31,6 +31,7 @@ extern bool compileModeOn;
 
 extern bool output_banned ;
 extern int LC;
+static int expTernaryLabelAllo = 0;
 // TODO: refine the order of "!";
 
 std::map<std::string, int> IdfToValue;
@@ -115,13 +116,19 @@ void expressionBasic::evaluate_compiler(int pos,environment* env)
 
 		if (compileModeOn)
 		{
+			NameToAddress(var.Idf, env, pos + 1);
+
+
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 3 << " " << NameToAddress(var.Idf, env) << " " << " " << " " <<pos ;
-			if (anotationModeOn) std::cout << "// 拷贝指令,语义：MEM[z] = MEM[x],此处用法为：读取变量值至MEM[z]  ";
+			std::cout << 2 << " " << 0 << " " << pos+1 << " " << pos ;
+			if (anotationModeOn) std::cout << "// 数组读取指令,语义：MEM[z] = MEM[0+MEM[pos+1]],此处用法为：读取变量值至MEM[z]  ";
 			std::cout << std::endl;
 		}
-		
-		MEM[pos] = MEM[NameToAddress(var.Idf, env)];
+		else
+		{
+			NameToAddress(var.Idf, env, pos + 1);
+			MEM[pos] = MEM[MEM[pos+1]];
+		}
 	}
 	else if (basicType == basicType_int)
 	{
@@ -142,8 +149,8 @@ void expressionBasic::evaluate_compiler(int pos,environment* env)
 		if (compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << "0 " << MEM[posExp] << " " << " " << " " << pos;
-			if (anotationModeOn)std::cout << "// 常量存储，语义：MEM[z] = x,处理Basic Expression";
+			std::cout << "3 " << posExp << " " << " " << " " << pos;
+			if (anotationModeOn)std::cout << "// 地址拷贝，将expression结果拷贝，处理Basic Expression";
 			std::cout << std::endl;
 		}
 		
@@ -233,7 +240,7 @@ void expressionBinary::evaluate_compiler(int pos,environment* env)
 	if (strcmp(op, "+") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op, pos, posExp1, posExp2); MEM[pos] = MEM[posExp1]+MEM[posExp2]; }
 	else if (strcmp(op, "-") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]-MEM[posExp2];}
 	else if (strcmp(op, "*") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]*MEM[posExp2];}
-	else if (strcmp(op, "/") == 0) { exp_1->evaluate_compiler(posExp1,env);exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]/MEM[posExp2];}
+	else if (strcmp(op, "/") == 0) { exp_1->evaluate_compiler(posExp1, env); exp_2->evaluate_compiler(posExp2, env); helper_expBi(op, pos, posExp1, posExp2); }
 	else if (strcmp(op, "==") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]==MEM[posExp2];}
 	else if (strcmp(op, ">=") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]>=MEM[posExp2];}
 	else if (strcmp(op, "<=") == 0) { exp_1->evaluate_compiler(posExp1,env); exp_2->evaluate_compiler(posExp2,env); helper_expBi(op,pos,posExp1,posExp2);MEM[pos] = MEM[posExp1]<=MEM[posExp2];}
@@ -276,10 +283,16 @@ void expressionTernery::evaluate_compiler(int pos,environment* env)
 	if (compileModeOn)
 	{
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-		std::cout << 20 << " " << exp1_pos << " " << " " << " " << LC + nLine3;
+		std::cout << 20 << " " << exp1_pos << " " << " " << " goto " << "Label_expTernary_"<<expTernaryLabelAllo;
 		if (anotationModeOn) std::cout << "// 如果MEM[x]的值非零，跳转到第z条指令继续执行, 即跳过exp_3的计算，避免了exp_2的值被覆盖";
 		std::cout << std::endl;
+
 		exp_3->evaluate_compiler(exp_pos,env);
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout <<"Label_expTernary_" << expTernaryLabelAllo++;
+		if (anotationModeOn) std::cout << "// LABEL";
+		std::cout << std::endl;
 
 		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 		std::cout << 3 << " " << exp_pos << " " << " " << " " << pos;

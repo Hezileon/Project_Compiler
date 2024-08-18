@@ -32,6 +32,7 @@ public:
 	virtual void execute() = 0;
 	virtual void show_yourself() = 0;
 	//virtual int getLineCnt() = 0;
+	virtual bool isReturnTypeStatement() = 0;
 };
 
 inline std::string funcName_generate(char* c, int psize) {
@@ -39,7 +40,7 @@ inline std::string funcName_generate(char* c, int psize) {
 	for (int i = 0; i < psize; i++) func = func + "i";
 	return func;
 }
-inline int NameToAddress(char* c, environment* var_env);
+inline void NameToAddress(char* c, environment* var_env, int pos);
 class block
 {
 private:
@@ -96,7 +97,8 @@ public:
 	void setParmSize(int size_) { parmSize = size_; }
 	// plz make sure the curEnv and curBlock are correct before you call this function;
 	void executeAllStatement() { for (statement* s : stm) { s->execute(); } }
-
+	statement* getLastStatememt() { return stm[stm.size() - 1]; }
+	void deleteLastStatememt() { stm.pop_back(); }
 };
 class environment
 {
@@ -127,8 +129,9 @@ public:
 		std::string var = c; if (!varOffset.count(var)) { varTbl.push_back(var); varOffset[var] = offsetAllo++; varCnt++; }
 	}
 	void updateValue(char* c, int value)
-	{
-		MEM[NameToAddress(c, this)] = value;
+	{// TODO-1: NO CHANGES?
+		NameToAddress(c, this, 0);
+		MEM[MEM[0]] = value;
 	}
 	void createFunc(char* c, int psize);
 	void updateDest(char* c, int psize, block* dest);
@@ -221,17 +224,7 @@ public:
 	void pop_RtnSos(int x) { rtnPos_s.pop(); }
 	block* read_JumpDest_Top() { return jmpDest_s.top(); }
 	block* read_ReturnDest_Top() { return rtnDest_s.top(); }
-	void main_block_init()
-	{
-		curBlock = MainBlock;
-		curEnv = curBlock->getMyEnv();
-		nextPos = 0;
-
-		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
-		MEM[MEM[200] + 1] = MEM[200];
-		MEM[200] = MEM[200] + offset;
-		curEnv->setStackAddr(MEM[200]);
-	}
+	void main_block_init();
 
 	void jump();
 	void jump_para(std::vector<expression*> parms);
@@ -270,6 +263,7 @@ public:
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": assignment" << std::endl; }
 	~assignment();
+	bool isReturnTypeStatement() override { return false; }
 	// int getLineCnt() override{}
 };
 
@@ -285,6 +279,7 @@ public:
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": output" << std::endl; }
 	~output();
+	bool isReturnTypeStatement() override { return false; }
 };
 
 class input : public statement
@@ -293,13 +288,14 @@ private:
 	char* varName;
 	block* myBlock;
 public:
-	input(char* n,block* myBlock_) :varName(n),myBlock(myBlock_) { std::cout << stmCnt++ << ": input" << std::endl; }
+	input(char* n,block* myBlock_) :varName(n),myBlock(myBlock_) { }
 	~input() {}
 
 	void execute() override;
 	
 	void show_yourself() override{ std::cout << stmCnt++ << ": input" << std::endl; }
 	//virtual int getLineCnt() override{}
+	bool isReturnTypeStatement() override { return false; }
 };
 // this should happen within preprocessor, because that its "execute()" is meaningless;
 
@@ -321,6 +317,7 @@ public:
 	void show_yourself() override { std::cout << stmCnt++ << ": function Def" << std::endl; }
 	~functionDef() {}
 	//virtual int getLineCnt() override{}
+	bool isReturnTypeStatement() override { return false; }
 };
 
 
@@ -339,6 +336,7 @@ public:
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": variable declaration" << std::endl; }
 	// virtual int getLineCnt() override{}
+	bool isReturnTypeStatement() override { return false; }
 };
 
 class functionCall : public statement
@@ -357,6 +355,7 @@ public:
 	void show_yourself() override { std::cout << stmCnt++ << ": function call" << std::endl; }
 	~functionCall() {}
 	//virtual int getLineCnt() override{}
+	bool isReturnTypeStatement() override { return false; }
 };
 
 class ifStatement : public statement
@@ -376,6 +375,7 @@ public:
 	void show_yourself() override { std::cout << stmCnt++ << ": if statement" << std::endl; }
 	~ifStatement() {}
 	//virtual int getLineCnt() override{}
+	bool isReturnTypeStatement() override { return false; }
 };
 
 class returnStatement:public statement
@@ -385,12 +385,13 @@ private:
 	expression* cond;
 	block* myBlock;
 public:
-	returnStatement(block* myBlock_):myBlock(myBlock) { isWhileVersion = false; cond = nullptr; }
+	returnStatement(block* myBlock_):myBlock(myBlock_) { isWhileVersion = false; cond = nullptr; }
 	returnStatement(expression* cd,block* myBlock_) :cond(cd),myBlock(myBlock_) { isWhileVersion = true; }
 	~returnStatement() = default;
 
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": return statement ( no rtn value)" << std::endl; }
+	bool isReturnTypeStatement() override { return true; }
 };
 
 class returnValueStatement :public statement
@@ -405,6 +406,7 @@ public:
 	void execute() override;
 	
 	void show_yourself() override { std::cout << stmCnt++ << ": return with value statement" << std::endl; }
+	bool isReturnTypeStatement() override { return true; }
 };
 // TODO-2
 class whileStatement :public statement
@@ -419,7 +421,7 @@ public:
 
 	void execute() override;
 	void show_yourself() override { std::cout << stmCnt++ << ": while statement" << std::endl; }
-
+	bool isReturnTypeStatement() override { return false; }
 };
 // derived class of class statement, containing "seq" to point at the other type of statement;
 class seqStatement : public statement

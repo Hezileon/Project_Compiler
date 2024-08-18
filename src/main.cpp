@@ -6,6 +6,8 @@
 #include "../inc/Statement.h"
 #include "../inc/preprocessor.h"
 using namespace std;
+std::vector<block*> allBlocks;
+block* global_block;
 
 std::map<std::string, int> varToAddress;
 extern int global_var_cnt = 0;
@@ -13,7 +15,7 @@ extern int global_var_cnt = 0;
 // 三步走：1.正确输入词法单元（lexer可以正确使用） 2.递归处理语义 3.实现execute()
 extern bool anotationModeOn = false;
 extern bool lineCounterModeOn = false;
-extern bool compileModeOn = false;
+extern bool compileModeOn = true;
 
 extern bool showStatementModeOn = false;
 extern bool output_banned = false;
@@ -35,7 +37,5 @@ int main()
 	processor.execute();
 	
 	return 0;
-	
 
-	
 }

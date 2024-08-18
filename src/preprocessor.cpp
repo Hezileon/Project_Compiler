@@ -29,6 +29,9 @@ extern int MEM[500];
 extern int LC;
 
 extern std::map<std::string, int> varToAddress;
+extern std::vector<block*> allBlocks;
+extern block* global_block;
+
 extern int global_var_cnt;
 
 extern bool anotationModeOn;
@@ -86,6 +89,8 @@ inline bool quitBlockCheck(Lexer* lexer)
 
 block::block(Lexer* lexer,environment* myEnvironment_,bool isFuncBlock_):myEnv(myEnvironment_)
 {
+	allBlocks.push_back(this);
+
 	isFuncBlock = isFuncBlock_;
 	if (!isFuncBlock) { parmSize = 0; }
 	if (myEnv->isGlobalEnv())
@@ -108,6 +113,7 @@ block::block(Lexer* lexer,environment* myEnvironment_,bool isFuncBlock_):myEnv(m
 		// we didn't give Output a special type, just use them as identifier;
 		if (tk_1->getType() == Identifier && (strcmp(tk_1->getIdf(), "Output") == 0 || strcmp(tk_1->getIdf(), "output") == 0))
 		{
+
 			expression* exp = parseExpression(lexer);
 			statement* ptr = new output{ tk_1->getIdf(),exp,this };
 			this->pushStatement(ptr);
@@ -420,7 +426,8 @@ preprocessor::preprocessor(Lexer* lexer)
 	MainBlock = nullptr;
 	// initialization:
 	curEnv = new environment( nullptr); // a.k.a global environment
-	curBlock = new block(lexer, curEnv,false);
+	global_block = new block(lexer, curEnv,false);
+	curBlock = global_block;
 }
 
 extern int MEM[500];
@@ -494,7 +501,8 @@ void preprocessor::jump_para(std::vector<expression*> parms)
 	{
 		char* var_c = curEnv->getVarTbl(i);// bind value to variables -> get the name of the variables;
 
-		MEM[NameToAddress(var_c, curEnv)] = p_answer[i]; // notice that the expression should be calculated before entering the block,
+		NameToAddress(var_c, curEnv, 1);
+		MEM[MEM[1]] = p_answer[i]; // notice that the expression should be calculated before entering the block,
 		// while the variable should be assigned after entering the block;
 	}
 }
@@ -508,7 +516,7 @@ void returnStatement::execute()
 			cond->evaluate_compiler(0,myBlock->getMyEnv());
 
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << myBlock->getLabel_start();
+			std::cout << 20 << " " << 0 << " " << " " << " " << "goto " << myBlock->getLabel_start()<<"_whileSpecial";
 			if (anotationModeOn) std::cout << "// 条件跳转至 whileBlock开头";
 			std::cout << std::endl;
 
@@ -533,6 +541,7 @@ void returnStatement::execute()
 	}
 	else
 	{
+		
 		if(compileModeOn)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
@@ -637,6 +646,14 @@ void block::generateCode()
 
 	// MEM[200] = MEM[200] + offset;
 	// stack push end;
+	if(myEnv->ifIsWhileBlock())
+	{
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << myLabel << "_whileSpecial";
+		if (anotationModeOn) std::cout << "// Label whileSpecial";
+		std::cout << std::endl;
+	}
+	
 
 	// 接受传递参数
 	if(isFuncBlock)
@@ -644,12 +661,11 @@ void block::generateCode()
 		for(int i = 0; i < parmSize ; i++)
 		{
 			if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-			std::cout << 1 << " " << 200 << " " << -i << " " << 200;
+			std::cout << 1 << " " << 99-i << " " << -i << " " << 200;
 			if (anotationModeOn) std::cout << "// 数组元素存储，语义：MEM[MEM[200]+-i] = MEM[200] ";
 			std::cout << std::endl;
 
 			// MEM[MEM[200] - i] = MEM[99 - i];
-			// ????????????????????????????????????????????
 		}
 	}
 
@@ -664,26 +680,27 @@ void preprocessor::execute()
 	// MAIN_PROCESS_LOOP
 	statusOperating = true;
 	MEM[200] = 200;
-	/*
-	std::vector<std::string> globalFuncTbl = curEnv->getGlobalFuncDef();
-	for(std::string name: globalFuncTbl)
+	if(compileModeOn)
 	{
-		block* ptr = curEnv->getFuncBlock(name);
-		if(ptr == MainBlock)
+		for (block* p : allBlocks)
+		{
+		if (p == MainBlock || p == global_block)
 		{
 			continue;
 		}
 		else
 		{
-			ptr->generateCode();// if we ensure that MAIN function's generateCode is not called;
+			p->generateCode();// if we ensure that MAIN function's generateCode is not called;
 		}// TODO-2
+		}
 	}
-	*/
+	
 	
 	if (MainBlock != nullptr)
 	{
 		main_block_init();
 	}
+
 	curBlock->setPos(nextPos++);
 	statement* ptr = curBlock->getNextStatement();
 	while (ptr != nullptr && statusOperating)
@@ -691,5 +708,66 @@ void preprocessor::execute()
 		if (showStatementModeOn) { ptr->show_yourself(); }
 		ptr->execute();
 		curBlock->setPos(nextPos++); ptr = curBlock->getNextStatement();
+	}
+}
+
+void preprocessor::main_block_init()
+{
+	if(compileModeOn)
+	{
+		curBlock = MainBlock;
+		curEnv = curBlock->getMyEnv();
+		nextPos = 0;
+
+		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << "LABEL_MAIN_BLOCK";
+		if (anotationModeOn) std::cout;
+		std::cout << std::endl;
+
+		// MEM[200] = 200;
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 0 << " " << 200 << " " << " " << " " << 200;
+		if (anotationModeOn) std::cout << "// MEM[200] = 200";
+		std::cout << std::endl;
+
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 1 << " " << 200 << " " << 1 << " " << 200;
+		if (anotationModeOn) std::cout << "// 现栈顶的存档！保存到现栈顶+1处，MEM[y+MEM[z]] = MEM[x]";
+		std::cout << std::endl;
+		
+
+		//MEM[1] = offset;
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 0 << " " << offset << " " << " " << " " << 1;
+		if (anotationModeOn) std::cout << "// MEM[1] 保存 栈的offset";
+		std::cout << std::endl;
+
+		
+
+
+		if (lineCounterModeOn) std::cout << LC << ": "; LC++;
+		std::cout << 4 << " " << 200 << " " << 1 << " " << 200;
+		if (anotationModeOn) std::cout << "// MEM[z] = MEM[200]+MEM[1],stack shift";
+		std::cout << std::endl;
+
+		statement* last_statement_1 = MainBlock->getLastStatememt();
+		if (last_statement_1->isReturnTypeStatement()) { MainBlock->deleteLastStatememt(); }
+		statement* last_statement_2 = MainBlock->getLastStatememt();
+		if (last_statement_2->isReturnTypeStatement()) { MainBlock->deleteLastStatememt(); }
+		//MEM[200] = MEM[200+MEM[1]];
+	}
+	else
+	{
+		curBlock = MainBlock;
+		curEnv = curBlock->getMyEnv();
+		nextPos = 0;
+
+		int offset = curBlock->getMyEnv()->getVarCnt() + 1;
+		MEM[1] = offset;
+		// mark TODO
+		MEM[200] = MEM[200]+offset;
 	}
 }
