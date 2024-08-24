@@ -336,8 +336,8 @@ block::block(Lexer* lexer,environment* myEnvironment_,bool isFuncBlock_):myEnv(m
 				{
 					//func(1,2,3); func:tk_3 func();
 					lexer->getToken();
-					Token* leftBrancketTest = lexer->getToken();
-					if(leftBrancketTest->getType()==Operator && (strcmp(leftBrancketTest->getOp(), ")") == 0))
+					Token* RightBrancketTest = lexer->getToken();
+					if(RightBrancketTest->getType()==Operator && (strcmp(RightBrancketTest->getOp(), ")") == 0))
 					{
 						// we leave ; untouched
 						functionCall* ptr = new functionCall(tk_3->getIdf(), 0, this);
@@ -371,6 +371,43 @@ block::block(Lexer* lexer,environment* myEnvironment_,bool isFuncBlock_):myEnv(m
 					lexer->rollBack();
 					statement* ptr = new assignment{ tk_1->getIdf(),tk_2->getOp(),parseExpression(lexer),this };
 					this->pushStatement(ptr);
+				}
+			}
+			else if (tk_2->getType() == Operator && strcmp(tk_2->getOp(), "(") == 0)
+			{
+				if (tk_1->getType() == Identifier && myEnv->isFuncCall(tk_1->getIdf()))
+				{
+					Token* RightBrancketTest = lexer->getToken();
+					if (RightBrancketTest->getType() == Operator && (strcmp(RightBrancketTest->getOp(), ")") == 0))
+					{
+						// we leave ; untouched
+						functionCall* ptr = new functionCall(tk_1->getIdf(), 0, this);
+						this->pushStatement(ptr);
+					}
+					else
+					{
+						lexer->rollBack();
+						std::vector<expression*> para;
+						expression* exp = parseExpression(lexer); // Am i making things much complicated than i can handle?
+						Token* comma = lexer->getToken(); // if it comes to the end, comma contains ")"
+						while (comma->getType() == Operator && (strcmp(comma->getOp(), ",") == 0))
+						{
+							para.push_back(exp);
+							exp = parseExpression(lexer); comma = lexer->getToken();
+						}
+						para.push_back(exp);
+
+						functionCall* ptr_call = new functionCall(tk_1->getIdf(), para.size(), this);
+						for (expression* exp : para)
+						{
+							ptr_call->addParms(exp);
+						}
+						this->pushStatement(ptr_call);
+					}
+				}
+				else
+				{
+					std::cerr << "Wrong!" << std::endl;
 				}
 			}
 			else

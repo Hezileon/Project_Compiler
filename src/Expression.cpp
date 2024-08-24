@@ -220,14 +220,14 @@ void helper_expBi(char* op, int pos, int posE1, int posE2)
 			if (num == -2)
 			{
 				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
-				std::cout << 12 << " " << posE1 << " " << posE2 << " " << pos + 3;
+				std::cout << 10 << " " << posE1 << " " << posE2 << " " << pos + 3;
 				if (anotationModeOn)std::cout << "// 二目运算符指令，语义：MEM[z] = MEM[x] > MEM[y],处理Binary Expression (special case <=)";
 				std::cout << std::endl;
 
 				if (lineCounterModeOn) std::cout << LC << ": "; LC++;
 				std::cout << 14 << " " << pos + 3 << " " << " " << " " << pos;
 				if (anotationModeOn)std::cout << "// MEM[z] = !MEM[x] ";
-				std::cout << std::endl;;
+				std::cout << std::endl;
 			}
 		}
 
