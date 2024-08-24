@@ -30,6 +30,9 @@
     <ClInclude Include="inc\preprocessor.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="inc\virtual_computer_advanced.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">

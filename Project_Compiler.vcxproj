@@ -132,6 +132,7 @@
     <ClInclude Include="inc\Expression.h" />
     <ClInclude Include="inc\preprocessor.h" />
     <ClInclude Include="inc\Statement.h" />
+    <ClInclude Include="inc\virtual_computer_advanced.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\compiler.cpp" />

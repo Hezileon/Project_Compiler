@@ -35,7 +35,7 @@ int main()
 		main.execute();
 		*/
 	processor.execute();
-	
-	return 0;
 
+	system("pause");
+	return 0;
 }
